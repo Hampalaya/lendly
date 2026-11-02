@@ -192,7 +192,7 @@ class Form extends Component
         }
         RateLimiter::hit($limit, 60);
 
-        return ['address' => app(ListingAddress::class)->lookup($latitude, $longitude)];
+        return app(ListingAddress::class)->resolve($latitude, $longitude);
     }
 
     public function isPriceSignificantlyHigh(): bool

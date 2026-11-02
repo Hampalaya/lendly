@@ -125,10 +125,12 @@
                                 </div>
                                 <div>
                                     <x-input-label for="estimated_original_price" value="Original price (₱, optional)" />
-                                    <x-text-input wire:model.live.debounce.500ms="estimated_original_price" id="estimated_original_price" type="number" min="0" step="0.01" class="mt-1 block w-full" />
+                                    <x-text-input wire:model.live.debounce.300ms="estimated_original_price" id="estimated_original_price" type="number" min="0" step="0.01" class="mt-1 block w-full" />
                                     <x-input-error :messages="$errors->get('estimated_original_price')" class="mt-2" />
                                 </div>
                             </div>
+                            @php $insight = $this->marketInsight(); @endphp
+                            <x-listing-market-insight :insight="$insight" :original-price="$estimated_original_price" :high-price="$this->isPriceSignificantlyHigh()" />
                         </div>
                     </section>
 
@@ -148,7 +150,10 @@
                             <div wire:ignore x-data="locationPicker(@js($latitude), @js($longitude))">
                                 <div class="flex flex-wrap items-center justify-between gap-2">
                                     <x-input-label required value="Map pin (required)" />
-                                    <button type="button" @click="useMyLocation" :disabled="locating" class="inline-flex min-h-10 items-center rounded-lg px-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 hover:text-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-100" x-text="locating ? 'Finding location…' : 'Use my location'">Use my location</button>
+                                    <button type="button" @click="useMyLocation" :disabled="locating" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:border-blue-300 hover:bg-blue-100 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:opacity-60">
+                                        <x-icon name="map-pin" class="h-4 w-4 shrink-0" aria-hidden="true" />
+                                        <span x-text="locating ? 'Finding location…' : 'Use current location'">Use current location</span>
+                                    </button>
                                 </div>
                                 <div x-ref="map" class="relative isolate z-0 mt-2 h-64 w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm"></div>
                                 <p class="mt-1 text-xs leading-5 text-slate-500">Click or drag the pin to fill the address. Check it and add pickup details as needed.</p>
@@ -250,57 +255,7 @@
                             </div>
                         </div>
 
-                        @php $insight = $this->marketInsight(); @endphp
-                        @if ($category_id !== null || $estimated_original_price > 0)
-                            <div class="mt-5 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/90 to-sky-50/70 p-4">
-                                <p class="text-xs font-bold uppercase tracking-[0.14em] text-blue-600">Market insight</p>
-                                @if ($insight['count'] > 0)
-                                    <div class="mt-3 grid grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                            <p class="text-xs leading-5 text-slate-500">Similar listings</p>
-                                            <p class="font-semibold text-slate-800">{{ $insight['count'] }}</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs leading-5 text-slate-500">Average</p>
-                                            <p class="font-semibold text-slate-800">₱{{ number_format($insight['average'], 0) }}/day</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs leading-5 text-slate-500">Price range</p>
-                                            <p class="font-semibold text-slate-800">₱{{ number_format($insight['min'], 0) }}&ndash;{{ number_format($insight['max'], 0) }}</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs leading-5 text-slate-500">Suggested price</p>
-                                            <p class="font-semibold text-slate-800">₱{{ number_format($insight['suggested'], 0) }}/day</p>
-                                        </div>
-                                    </div>
-                                    <p class="mt-3 text-xs leading-5 text-slate-500">This is an estimated market insight based on similar listings on the platform. You can still choose your own price.</p>
 
-                                    @if ($this->isPriceSignificantlyHigh())
-                                        <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-                                            <p class="font-semibold">Your price is significantly higher than similar listings.</p>
-                                            <p class="mt-1">Similar items range from ₱{{ number_format($insight['min'], 0) }} to ₱{{ number_format($insight['max'], 0) }}/day.</p>
-                                            <p class="mt-1">Suggested price: ₱{{ number_format($insight['suggested'], 0) }}/day.</p>
-                                        </div>
-                                    @endif
-                                @else
-                                    <p class="mt-2 text-sm text-slate-500">No similar published listings yet to compare against.</p>
-                                @endif
-                                @if ($insight['suggested'] !== null)
-                                    <div class="mt-3 border-t border-blue-100 pt-3">
-                                        <p class="text-sm font-semibold text-slate-800">Suggested daily rate: ₱{{ number_format($insight['suggested'], 2) }}</p>
-                                        @if ($insight['basis'] === 'original-price-ratio')
-                                            <p class="mt-1 text-xs leading-5 text-slate-600">Your original price × {{ number_format($insight['ratio'] * 100, 2) }}%, the median daily-to-original-price ratio of {{ $insight['ratio_count'] }} comparable listings.</p>
-                                        @elseif ($insight['basis'] === 'starting-estimate')
-                                            <p class="mt-1 text-xs leading-5 text-slate-600">Starting estimate: 1% of your original price per day. There is not enough original-price data for a market-based estimate.</p>
-                                        @else
-                                            <p class="mt-1 text-xs leading-5 text-slate-600">Based on average daily rates. Add the original price to tailor this suggestion.</p>
-                                        @endif
-                                        <button type="button" wire:click="useSuggestedPrice" class="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-blue-700 ring-1 ring-blue-200">Use suggested daily rate</button>
-                                        <p class="mt-2 text-xs text-slate-500">Your rate changes only when you choose to apply the suggestion.</p>
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
                     </section>
 
                     <!-- Photos -->

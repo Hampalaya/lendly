@@ -130,6 +130,18 @@ class PhaseTwoListingTest extends TestCase
         $this->assertSame(2, $listing->images()->count());
     }
 
+    public function test_original_price_shows_live_insight_inside_item_details_without_changing_the_rate(): void
+    {
+        $form = $this->form()->assertSeeInOrder(['Original price', 'Market insight', 'Location & logistics', 'Pricing & deposit'])
+            ->assertSee('Enter the original price above to get a suggested daily rental rate.');
+        $form->set('estimated_original_price', 10000)->assertSee('10,000.00')->assertSee('Suggested daily rate: ₱100.00')
+            ->assertSee('Starting estimate: 1%')->assertSet('price_per_day', 200.0);
+        $form->set('estimated_original_price', 20000)->assertSee('20,000.00')->assertSee('Suggested daily rate: ₱200.00')
+            ->set('estimated_original_price', 30000)->assertSee('Suggested daily rate: ₱300.00')->assertSet('price_per_day', 200.0)
+            ->call('useSuggestedPrice')->assertSet('price_per_day', 300.0)
+            ->set('estimated_original_price', null)->assertSee('Enter the original price above to get a suggested daily rental rate.');
+    }
+
     public function test_address_lookup_formats_caches_and_throttles_provider_calls(): void
     {
         Cache::flush();
@@ -149,6 +161,33 @@ class PhaseTwoListingTest extends TestCase
             Http::fake(['*' => $response]);
             $this->assertNull(app(ListingAddress::class)->lookup(14.5995, 120.9842));
         }
+    }
+
+    public function test_busy_provider_reports_retry_and_then_resolves_without_caching_the_busy_result(): void
+    {
+        Cache::flush();
+        Http::fake(['*' => Http::response(['features' => [['properties' => ['city' => 'Manila', 'country' => 'Philippines']]]])]);
+        Cache::put('listing-address-provider-slot', true, 1);
+        $service = app(ListingAddress::class);
+        $this->assertSame(['address' => null, 'retry_after' => 1], $service->resolve(14.6, 121));
+        Http::assertNothingSent();
+        $this->travel(2)->seconds();
+        $this->assertSame(['address' => 'Manila, Philippines'], $service->resolve(14.6, 121));
+        $this->assertSame(['address' => 'Manila, Philippines'], $service->resolve(14.6, 121));
+        Http::assertSentCount(1);
+    }
+
+    public function test_owner_pin_action_passes_retry_information_and_keeps_manual_input(): void
+    {
+        Cache::flush();
+        Http::fake();
+        Cache::put('listing-address-provider-slot', true, 1);
+        session(['active_interface' => 'owner']);
+        Livewire::actingAs(User::factory()->owner()->create())->test(Form::class)
+            ->assertSee('Use current location')->set('location', 'Manual pickup gate')
+            ->call('resolvePinnedAddress', 14.6, 121)->assertReturned(['address' => null, 'retry_after' => 1])
+            ->assertSet('location', 'Manual pickup gate');
+        Http::assertNothingSent();
     }
 
     public function test_address_action_requires_owner_interface_and_valid_coordinates(): void

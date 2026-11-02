@@ -366,7 +366,9 @@
                                 <p role="status" class="mt-4 text-sm font-semibold text-emerald-700">Receipt confirmed {{ $rental->securityDeposit->received_at->setTimezone('Asia/Manila')->format('M d, Y g:i A') }} (Philippine time).</p>
                             @else
                                 @can('confirmDepositReceipt', $rental)
-                                    <button type="button" wire:click="confirmDepositReceipt" wire:confirm="Have you actually received the refundable deposit balance? This records receipt; it does not transfer money." wire:loading.attr="disabled" class="mt-4 min-h-11 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white">Confirm deposit received</button>
+                                    <x-action-confirmation id="deposit-receipt" title="Confirm deposit received" message="Have you actually received the refundable deposit balance? This records receipt; it does not transfer money." action="confirmDepositReceipt" confirm-label="Confirm deposit received">
+                                        <button type="button" x-on:click="$refs.confirmation.showModal()" wire:loading.attr="disabled" wire:target="confirmDepositReceipt" class="mt-4 min-h-11 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white">Confirm deposit received</button>
+                                    </x-action-confirmation>
                                 @endcan
                             @endif
                         </x-rental-panel>

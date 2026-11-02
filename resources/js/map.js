@@ -107,7 +107,15 @@ document.addEventListener('alpine:init', () => {
             const previousAddress = this.$wire.get('location');
             this.addressLoading = true;
             try {
-                const result = await this.$wire.resolvePinnedAddress(latitude, longitude);
+                let result;
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    if (version !== this.pinVersion) return;
+                    result = await this.$wire.resolvePinnedAddress(latitude, longitude);
+                    if (version !== this.pinVersion) return;
+                    if (result?.address || !result?.retry_after || attempt === 2) break;
+                    this.locationStatus = 'Finding the address for your latest pin…';
+                    await new Promise(resolve => setTimeout(resolve, Math.min(result.retry_after, 2) * 1000));
+                }
                 if (version !== this.pinVersion) return;
                 if (this.$wire.get('location') !== previousAddress) {
                     this.locationStatus = 'Pin updated. Your edited address was kept.';
@@ -140,10 +148,17 @@ document.addEventListener('alpine:init', () => {
             const version = this.pinVersion;
 
             navigator.geolocation.getCurrentPosition((position) => {
-                this.locating = false;
-                if (version !== this.pinVersion) return;
+                if (version !== this.pinVersion) {
+                    this.locating = false;
+                    return;
+                }
                 const latlng = { lat: position.coords.latitude, lng: position.coords.longitude };
-                this.map.setView(latlng, 14);
+                // The form can scroll/resize while the location permission is
+                // pending. Refresh Leaflet's size and cancel any previous pan
+                // so the first result centers immediately, even off screen.
+                this.map.stop();
+                this.map.invalidateSize({ pan: false });
+                this.map.setView([latlng.lat, latlng.lng], 14, { animate: false });
 
                 if (this.marker) {
                     this.marker.setLatLng(latlng);
@@ -152,6 +167,7 @@ document.addEventListener('alpine:init', () => {
                     this.marker.on('dragend', () => this.reportPosition(this.marker.getLatLng()));
                 }
 
+                this.$refs.map.scrollIntoView({ block: 'center', behavior: 'smooth' });
                 this.reportPosition(latlng);
                 this.locating = false;
             }, (error) => {
@@ -160,7 +176,7 @@ document.addEventListener('alpine:init', () => {
                 this.locationError = error.code === 1
                     ? 'Location access was denied. You can still place the pin on the map.'
                     : 'Your location could not be found. Place a pin on the map or try again.';
-            }, { timeout: 10000, maximumAge: 60000 });
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
         },
     }));
 

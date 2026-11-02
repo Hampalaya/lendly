@@ -4,7 +4,7 @@ import test from 'node:test';
 import vm from 'node:vm';
 
 // Replace only browser/Leaflet boundaries; run the actual Alpine component code.
-function mapComponents(navigator = {}) {
+function mapComponents(navigator = {}, schedule = () => {}) {
     const components = {};
     const pins = [];
     const navigated = [];
@@ -27,7 +27,8 @@ function mapComponents(navigator = {}) {
         Icon: { Default: { prototype: {}, mergeOptions() {} } },
         map() {
             return Object.assign(layer(), {
-                setView(center, zoom) { this.center = Array.from(center); this.zoom = zoom; return this; },
+                setView(center, zoom, options) { this.center = Array.from(center); this.zoom = zoom; this.viewOptions = options; return this; },
+                stop() { return this; },
                 invalidateSize() {},
             });
         },
@@ -56,12 +57,12 @@ function mapComponents(navigator = {}) {
     vm.runInNewContext(`${pinsSource}\n${source}`, {
         L, document, markerIcon2x: '', markerIcon: '', markerShadow: '',
         Alpine: { data(name, factory) { components[name] = factory; } },
-        setTimeout() {}, navigator,
+        setTimeout: schedule, navigator,
         window: { location: { assign(url) { navigated.push(url); } } },
     });
     function component(name, ...args) {
         return Object.assign(components[name](...args), {
-            $refs: { map: {} }, $watch() {},
+            $refs: { map: { scrollIntoView() {} } }, $watch() {},
             $wire: { set(name, value) { wireValues[name] = value; }, get(name) { return wireValues[name]; } },
         });
     }
@@ -77,6 +78,100 @@ test('owner pin fills address while retaining precise coordinates', async () => 
     assert.equal(wireValues.longitude, 120.9842123);
     assert.equal(wireValues.location, 'Manila, Philippines');
     assert.equal(picker.addressLoading, false);
+});
+
+test('a busy geocoder automatically retries the latest pin and fills the address', async () => {
+    const waits = [];
+    const { component, wireValues } = mapComponents({}, (done, delay) => { waits.push(delay); done(); });
+    const picker = component('locationPicker', null, null);
+    let calls = 0;
+    picker.$wire.resolvePinnedAddress = async () => ++calls === 1
+        ? { address: null, retry_after: 1 } : { address: 'Latest pin, Manila' };
+    await picker.reportPosition({ lat: 14.6, lng: 121 });
+    assert.equal(calls, 2);
+    assert.deepEqual(waits, [1000]);
+    assert.equal(wireValues.location, 'Latest pin, Manila');
+    assert.equal(picker.addressLoading, false);
+});
+
+test('moving the pin cancels an older queued retry instead of replacing the latest address', async () => {
+    const timers = [];
+    const { component, wireValues } = mapComponents({}, done => timers.push(done));
+    const picker = component('locationPicker', null, null);
+    let calls = 0;
+    picker.$wire.resolvePinnedAddress = async () => ++calls === 1
+        ? { address: null, retry_after: 1 } : { address: 'New pin address' };
+    const old = picker.reportPosition({ lat: 1, lng: 1 });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(timers.length, 1);
+    await picker.reportPosition({ lat: 2, lng: 2 });
+    timers.shift()();
+    await old;
+    assert.equal(calls, 2);
+    assert.equal(wireValues.location, 'New pin address');
+    assert.equal(wireValues.latitude, 2);
+});
+
+test('automatic address retries are bounded and retain an editable manual address', async () => {
+    const { component, wireValues } = mapComponents({}, done => done());
+    const picker = component('locationPicker', null, null);
+    wireValues.location = 'Pickup gate details';
+    let calls = 0;
+    picker.$wire.resolvePinnedAddress = async () => { calls++; return { address: null, retry_after: 1 }; };
+    await picker.reportPosition({ lat: 14, lng: 120 });
+    assert.equal(calls, 3);
+    assert.equal(wireValues.location, 'Pickup gate details');
+    assert.equal(picker.addressLoading, false);
+    assert.match(picker.locationStatus, /manually or retry/);
+});
+
+test('owner current location places the pin and fills its resolved address', async () => {
+    const { component, wireValues } = mapComponents({ geolocation: {
+        getCurrentPosition(done) { done({ coords: { latitude: 14.6, longitude: 121 } }); },
+    } });
+    const picker = component('locationPicker', null, null);
+    picker.init();
+    picker.$wire.resolvePinnedAddress = async () => ({ address: 'Current pin address' });
+    picker.useMyLocation();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(wireValues.location, 'Current pin address');
+    assert.equal(wireValues.latitude, 14.6);
+    assert.equal(wireValues.longitude, 121);
+    assert.equal(picker.locating, false);
+});
+
+test('first current-location click centers the map after permission returns without waiting for the address', () => {
+    let locate;
+    let locationOptions;
+    let requests = 0;
+    const { component, wireValues, pins } = mapComponents({ geolocation: {
+        getCurrentPosition(done, fail, options) { requests++; locate = done; locationOptions = options; },
+    } });
+    const picker = component('locationPicker', 14, 120);
+    picker.init();
+    const actions = [];
+    picker.map.stop = () => actions.push('stop');
+    picker.map.invalidateSize = options => { assert.equal(options.pan, false); actions.push('resize'); };
+    picker.$refs.map.scrollIntoView = options => { assert.equal(options.block, 'center'); actions.push('show-map'); };
+    picker.$wire.resolvePinnedAddress = () => new Promise(() => {});
+    picker.useMyLocation();
+    picker.useMyLocation();
+    assert.equal(requests, 1);
+    assert.equal(picker.locating, true);
+    locate({ coords: { latitude: 13.75, longitude: 121.06 } });
+    assert.deepEqual(picker.map.center, [13.75, 121.06]);
+    assert.equal(picker.map.zoom, 14);
+    assert.equal(picker.map.viewOptions.animate, false);
+    assert.equal(pins.length, 1, 'The existing pin is moved, not duplicated');
+    assert.equal(pins[0].position.lat, 13.75);
+    assert.equal(pins[0].position.lng, 121.06);
+    assert.deepEqual(actions, ['stop', 'resize', 'show-map']);
+    assert.equal(wireValues.latitude, 13.75);
+    assert.equal(wireValues.longitude, 121.06);
+    assert.equal(picker.locating, false);
+    assert.equal(picker.addressLoading, true, 'Address lookup must not delay moving the map');
+    assert.equal(locationOptions.maximumAge, 0);
+    assert.equal(locationOptions.enableHighAccuracy, true);
 });
 
 test('late lookup cannot overwrite the latest pin address', async () => {

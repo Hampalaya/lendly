@@ -128,7 +128,8 @@
                                     <a href="{{ route('payment-proofs.show', $submission) }}" class="inline-flex min-h-11 items-center rounded-lg font-semibold text-blue-700 hover:underline focus:outline-none focus:ring-4 focus:ring-blue-100">Download submitted proof</a>
 
                                     @if ((int) ($submission->payment_destination['payee_user_id'] ?? 0) === auth()->id())
-                                        <form wire:submit="confirmPaymentReceipt({{ $submission->id }})" class="space-y-3" wire:confirm="Confirm that the full booking amount has arrived in your e-wallet? This will mark the booking paid.">
+                                        <x-action-confirmation :id="'payment-receipt-'.$submission->id" title="Confirm payment received" message="Confirm that the full booking amount has arrived in your e-wallet? This will mark the booking paid." :action="'confirmPaymentReceipt('.$submission->id.')'" confirm-label="Confirm funds received">
+                                        <form x-on:submit.prevent="$refs.confirmation.showModal()" class="space-y-3">
                                             <label class="flex items-start gap-3 leading-6 text-slate-700">
                                                 <input type="checkbox" wire:model="owner_funds_received" class="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
                                                 <span>I checked my e-wallet and received the full ₱{{ number_format($submission->amount, 2) }} for this booking.</span>
@@ -139,6 +140,7 @@
                                             <p class="text-slate-500">Confirm only after checking that the full payment reached your account. This marks the booking paid without admin approval.</p>
                                             <x-primary-button wire:loading.attr="disabled" wire:target="confirmPaymentReceipt">Confirm funds received</x-primary-button>
                                         </form>
+                                        </x-action-confirmation>
                                         @if (! $submission->recipient_confirmed_at)
                                         <form wire:submit="rejectPaymentProof({{ $submission->id }})" class="mt-4 space-y-3 border-t border-slate-100 pt-4" wire:confirm="Reject this proof and ask the renter to correct it? Only reject when the full payment has not been received.">
                                             <x-input-label required :for="'payment-rejection-'.$submission->id" value="Reason payment proof needs correction" />
@@ -356,9 +358,11 @@
                             <p class="mt-3 text-sm text-slate-600">Release recorded {{ $rental->securityDeposit->released_at->setTimezone('Asia/Manila')->format('M d, Y g:i A') }} (Philippine time). {{ $rental->securityDeposit->received_at ? 'The renter confirmed receipt.' : ($rental->securityDeposit->amount > $rental->securityDeposit->deducted_amount ? 'Awaiting renter receipt confirmation.' : 'No refundable balance is due.') }}</p>
                         @endif
                         @can('releaseDeposit', $rental)
-                            <button type="button" wire:click="releaseDeposit" wire:loading.attr="disabled" wire:target="releaseDeposit" wire:confirm="Have you sent the full deposit back to the renter? This records release only; it does not transfer money. The renter will confirm receipt separately." class="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-wait disabled:opacity-60">
+                            <x-action-confirmation id="deposit-release" title="Confirm deposit release" message="Have you sent the full deposit back to the renter? This records release only; it does not transfer money. The renter will confirm receipt separately." action="releaseDeposit" confirm-label="Record deposit release">
+                            <button type="button" x-on:click="$refs.confirmation.showModal()" wire:loading.attr="disabled" wire:target="releaseDeposit" class="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-wait disabled:opacity-60">
                                 Release deposit
                             </button>
+                            </x-action-confirmation>
                         @endcan
                         @if ($rental->securityDeposit->status->value === 'deducted')
                             <p class="mt-2 text-sm text-slate-600">
