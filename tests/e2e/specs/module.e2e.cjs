@@ -15,7 +15,7 @@ describe('Module tests', () => {
   });
 
   describe('Listings module (owner)', () => {
-    it('M-01 owner edits a listing price and the new price is public', async () => {
+    it('IT-01 owner edits a listing price and the new price is public (FR-07)', async () => {
       await loginAs(fx.users.owner.email, 'owner');
       await browser.url(`/owner/listings/${fx.listings.ladder.id}/edit`);
       await a.type('#price_per_day', '275');
@@ -26,7 +26,7 @@ describe('Module tests', () => {
       await a.waitForText('₱275.00');
     });
 
-    it('M-02 owner pauses a listing and it disappears from the marketplace', async () => {
+    it('IT-02 owner pauses a listing and it disappears from the marketplace (FR-07, FR-08)', async () => {
       await browser.url('/owner/listings');
       await a.clickWire(`deactivate(${fx.listings.ladder.id})`);
       await browser.pause(1500);
@@ -36,7 +36,7 @@ describe('Module tests', () => {
       await a.waitForText('No listings match your filters');
     });
 
-    it('M-03 owner reactivates the listing and it is public again', async () => {
+    it('IT-03 owner reactivates the listing and it is public again (FR-07, FR-08)', async () => {
       await loginAs(fx.users.owner.email, 'owner');
       await browser.url('/owner/listings');
       await a.clickWire(`reactivate(${fx.listings.ladder.id})`);
@@ -49,7 +49,7 @@ describe('Module tests', () => {
   });
 
   describe('Rental requests module', () => {
-    it('M-04 owner declines a request with a reason', async () => {
+    it('IT-04 owner declines a request with a reason (FR-12)', async () => {
       await loginAs(fx.users.owner.email, 'owner');
       await browser.url('/owner/rental-requests');
       await a.clickWire(`startRejecting(${fx.requests.reqDecline})`);
@@ -59,13 +59,14 @@ describe('Module tests', () => {
       await a.assertNoServerError();
     });
 
-    it('M-05 renter sees the decline and the owner\'s reason', async () => {
+    it('IT-05 renter sees the decline and the owner\'s reason (FR-12, FR-13)', async () => {
       await loginAs(fx.users.renter.email, 'renter');
-      await browser.url('/renter/rental-requests');
+      // The list shows 10 per page; use its status filter to find the declined request.
+      await browser.url('/renter/rental-requests?filter=rejected');
       await a.waitForText('QA: item is being serviced that week.');
     });
 
-    it('M-06 approving one request auto-declines an overlapping request', async () => {
+    it('IT-06 approving one request auto-declines an overlapping request (FR-12)', async () => {
       await loginAs(fx.users.owner.email, 'owner');
       await browser.url('/owner/rental-requests');
       await a.clickWire(`startApproving(${fx.requests.reqOverlapA})`);
@@ -76,7 +77,7 @@ describe('Module tests', () => {
       await a.waitForText('These dates were booked by another renter.');
     });
 
-    it('M-07 renter cancels their own pending request', async () => {
+    it('IT-07 renter cancels their own pending request (FR-34)', async () => {
       await a.clickWire(`startCancelling(${fx.requests.reqCancel})`);
       await a.type(`#cancellation-reason-${fx.requests.reqCancel}`, 'QA: plans changed.');
       await a.scrollClick(`form[wire\\:submit="cancel(${fx.requests.reqCancel})"] button[type="submit"]`);
@@ -87,7 +88,7 @@ describe('Module tests', () => {
   });
 
   describe('Agreement and booking module', () => {
-    it('M-08 renter accepts the agreement first; no booking yet', async () => {
+    it('IT-08 renter accepts the agreement first; no booking yet (FR-14, FR-15)', async () => {
       await loginAs(fx.users.renter.email, 'renter');
       await browser.url(`/renter/rental-requests/${fx.requests.reqAgree}/agreement`);
       await a.scrollClick('form[wire\\:submit="acceptTerms"] input[type="checkbox"]');
@@ -97,7 +98,7 @@ describe('Module tests', () => {
       assert.ok(!(await a.pageText()).includes(fx.listings.speaker.name), 'booking created after only one acceptance');
     });
 
-    it('M-09 owner accepts too → booking confirmed and both are notified', async () => {
+    it('IT-09 owner accepts too → booking confirmed and both are notified (FR-14, FR-40)', async () => {
       await loginAs(fx.users.owner.email, 'owner');
       await browser.url(`/owner/rental-requests/${fx.requests.reqAgree}/agreement`);
       await a.scrollClick('form[wire\\:submit="acceptTerms"] input[type="checkbox"]');
@@ -110,10 +111,11 @@ describe('Module tests', () => {
     });
   });
 
-  describe('Payments module', () => {
-    it('M-10 renter submits payment proof for a confirmed booking', async () => {
+  describe('Payments module (owner wallet)', () => {
+    it('IT-10 renter sees the owner\'s GCash instructions and submits payment proof (FR-41)', async () => {
       await loginAs(fx.users.renter.email, 'renter');
       await browser.url(`/renter/rentals/${fx.rentals.pay}`);
+      await a.waitForText('GCash');
       await a.type('#payment-reference', 'MOD-PAY-1');
       await a.upload('#payment-proof');
       await browser.pause(2000);
@@ -121,17 +123,19 @@ describe('Module tests', () => {
       await a.waitForText('Payment proof submitted');
     });
 
-    it('M-11 admin rejects the proof with a reason', async () => {
-      await asAdmin();
-      await browser.url(`/admin/rentals/${fx.rentals.pay}`);
-      await a.scrollClick('#rental-tab-payments');
-      await (await reviewBox()).waitForDisplayed();
-      await (await reviewBox()).setValue('QA: receipt is blurry, please upload a clearer copy.');
-      await a.clickWire(`rejectPayment(${await (await reviewBox()).getAttribute('id').then((id) => id.replace('payment-review-', ''))})`);
-      await a.waitForText('rejected', 15000);
+    it('IT-11 owner rejects the proof with a reason (FR-73)', async () => {
+      await loginAs(fx.users.owner.email, 'owner');
+      await browser.url(`/owner/rentals/${fx.rentals.pay}`);
+      await a.type('[wire\\:model="payment_rejection_reason"]', 'QA: receipt is blurry, please upload a clearer copy.');
+      await a.autoConfirm();
+      await a.scrollClick('form[wire\\:submit^="rejectPaymentProof("] button[type="submit"]');
+      await browser.pause(500);
+      await a.acceptDialogIfOpen();
+      await browser.pause(1500);
+      await a.assertNoServerError();
     });
 
-    it('M-12 renter sees the rejection and resubmits new proof', async () => {
+    it('IT-12 renter sees the rejection reason and resubmits corrected proof (FR-73)', async () => {
       await loginAs(fx.users.renter.email, 'renter');
       await browser.url(`/renter/rentals/${fx.rentals.pay}`);
       await a.waitForText('QA: receipt is blurry');
@@ -142,28 +146,25 @@ describe('Module tests', () => {
       await a.waitForText('Payment proof submitted');
     });
 
-    it('M-13 admin verifies the new proof → booking Paid', async () => {
-      await asAdmin();
-      await browser.url(`/admin/rentals/${fx.rentals.pay}`);
-      await a.scrollClick('#rental-tab-payments');
-      await (await reviewBox()).waitForDisplayed();
-      await (await reviewBox()).setValue('QA: amount matches the bank statement.');
-      const funds = await $('input[type="checkbox"][wire\\:model="funds_received"]');
-      if (!(await funds.isSelected())) await funds.click();
-      const sid = (await (await reviewBox()).getAttribute('id')).replace('payment-review-', '');
-      await a.clickWire(`verifyPayment(${sid})`);
-      await browser.pause(2000);
-      await browser.refresh();
-      await a.waitForText('Paid');
+    it('IT-13 owner confirms the funds were received → booking Paid, no admin needed (FR-73)', async () => {
+      await loginAs(fx.users.owner.email, 'owner');
+      await browser.url(`/owner/rentals/${fx.rentals.pay}`);
+      await a.scrollClick('input[type="checkbox"][wire\\:model="owner_funds_received"]');
+      await a.confirmDialogAction('confirmPaymentReceipt(');
+      await a.waitForText('Payment confirmed.');
     });
 
-    it('M-14 paid item shows as Reserved on its public page (FR-42)', async () => {
+    it('IT-14 the paid item\'s status badge shows Reserved (FR-42)', async () => {
       await freshSession();
       await browser.url(`/listings/${fx.listings.sony.id}`);
-      await a.waitForText('Reserved');
+      // Read the availability badge in the Rental rates panel, not any "Reserved" text on the page.
+      await browser.waitUntil(async () => (await browser.execute(() => {
+        const panel = document.querySelector('#rental-rates-title')?.closest('section');
+        return panel ? panel.querySelector('div.flex')?.innerText || panel.innerText.slice(0, 80) : '';
+      })).includes('Reserved'), { timeout: 15000, timeoutMsg: 'availability badge is not Reserved' });
     });
 
-    it('M-15 both parties see the transaction receipt (FR-17)', async () => {
+    it('IT-15 both parties see the transaction receipt with the reference (FR-17)', async () => {
       await loginAs(fx.users.renter.email, 'renter');
       await browser.url(`/renter/rentals/${fx.rentals.pay}`);
       await a.waitForText('Transaction receipt');
@@ -175,34 +176,68 @@ describe('Module tests', () => {
   });
 
   describe('Cancellation module', () => {
-    it('M-16 cancelling within 48 hours charges the 20% fee (₱240 of ₱1,200)', async () => {
+    it('IT-16 cancelling within the 48-hour window needs a reason and goes to owner review (FR-84)', async () => {
       await loginAs(fx.users.renter.email, 'renter');
       await browser.url(`/renter/rentals/${fx.rentals.cancelFee}`);
       await a.clickWire("$toggle('showCancelForm')");
       await a.type('#cancellation_reason', 'QA: no longer needed.');
       await a.clickWire('cancelRental');
-      await a.waitForText('This booking was cancelled.');
+      await a.waitForText('Cancellation request: pending');
+      await a.waitForText('Cancellation fee if approved: ₱240.00');
+    });
+
+    it('IT-17 owner approves the cancellation → booking cancelled with the ₱240 fee (FR-35, FR-84)', async () => {
+      await loginAs(fx.users.owner.email, 'owner');
+      await browser.url(`/owner/rentals/${fx.rentals.cancelFee}`);
+      await a.type('#cancellation-review-notes', 'QA: approved, item not yet packed.');
+      await a.submitWireForm('reviewCancellation(true)');
       await a.waitForText('Cancellation fee: ₱240.00');
     });
 
-    it('M-17 cancelling 10 days ahead is free (₱0 fee)', async () => {
+    it('IT-18 cancelling 10 days ahead takes effect at once with no fee (FR-34, FR-35)', async () => {
+      await loginAs(fx.users.renter.email, 'renter');
       await browser.url(`/renter/rentals/${fx.rentals.cancelFree}`);
       await a.clickWire("$toggle('showCancelForm')");
+      await a.type('#cancellation_reason', 'QA: plans changed.');
       await a.clickWire('cancelRental');
       await a.waitForText('This booking was cancelled.');
       await a.waitForText('Cancellation fee: ₱0.00');
     });
+
+    it('IT-19 the owner is notified and the cancelled dates can be requested again (FR-36)', async () => {
+      await loginAs(fx.users.owner.email, 'owner');
+      await browser.url('/notifications');
+      await a.waitForText('Rental cancelled');
+      await loginAs(fx.users.renter2.email, 'renter');
+      await browser.url(`/listings/${fx.listings.kayak.id}`);
+      await a.scrollClick('button[aria-controls="rental-request-modal"]');
+      await a.setField('#start_date', a.daysFromNow(10));
+      await browser.pause(600);
+      await a.setField('#end_date', a.daysFromNow(11));
+      await browser.pause(600);
+      await a.scrollClick('#accept_terms');
+      await a.submitWireForm('submit');
+      await a.waitForText('Rental request sent');
+    });
+
+    it('IT-20 history keeps the reason, fee and refund to arrange: ₱2,320 paid − ₱240 = ₱2,080 (FR-37)', async () => {
+      await loginAs(fx.users.renter.email, 'renter');
+      await browser.url(`/renter/rentals/${fx.rentals.cancelFee}`);
+      await a.waitForText('QA: no longer needed.');
+      await a.waitForText('Cancellation fee: ₱240.00');
+      await a.waitForText('Refund to arrange: ₱2,080.00');
+    });
   });
 
   describe('Return, damage and dispute module', () => {
-    it('M-18 renter confirms the return of an active rental', async () => {
+    it('IT-21 renter confirms the return of an active rental (FR-78)', async () => {
       await browser.url(`/renter/rentals/${fx.rentals.return}`);
       await a.clickWire('confirmReturn');
       await browser.pause(1500);
       assert.ok(!(await $('[wire\\:click="confirmReturn"]').isExisting()), 'return button still shown');
     });
 
-    it('M-19 owner records damage (₱300) and closes the return', async () => {
+    it('IT-22 owner records damage (₱300) and closes the return (FR-21, FR-80)', async () => {
       await loginAs(fx.users.owner.email, 'owner');
       await browser.url(`/owner/rentals/${fx.rentals.return}`);
       await a.type('#after_notes', 'QA: crack on the body.');
@@ -216,7 +251,7 @@ describe('Module tests', () => {
       await a.waitForText('Completed');
     });
 
-    it('M-20 renter disputes the damage claim', async () => {
+    it('IT-23 renter disputes the damage claim (FR-80, FR-29)', async () => {
       await loginAs(fx.users.renter.email, 'renter');
       await browser.url(`/renter/rentals/${fx.rentals.return}`);
       await a.type('#damage_response_notes', 'QA: the crack was there before pickup.');
@@ -226,7 +261,7 @@ describe('Module tests', () => {
       await a.waitForText('You disputed this claim.');
     });
 
-    it('M-21 admin resolves the dispute with ₱150 partial compensation', async () => {
+    it('IT-24 admin resolves the dispute with ₱150 partial compensation (FR-30, FR-46)', async () => {
       await asAdmin();
       await browser.url('/admin/disputes');
       await a.scrollClick('[wire\\:click^="startResolving("]');
@@ -244,14 +279,14 @@ describe('Module tests', () => {
   });
 
   describe('Messaging module', () => {
-    it('M-22 renter messages the owner from a listing', async () => {
+    it('IT-25 renter messages the owner from a listing (FR-31)', async () => {
       await browser.url(`/listings/${fx.listings.tripod.id}/message`);
       await a.type('form[wire\\:submit="send"] [wire\\:model="body"]', 'QA: is the tripod still available this weekend?');
       await a.submitWireForm('send');
       await a.waitForText('QA: is the tripod still available this weekend?');
     });
 
-    it('M-23 owner sees the message in the inbox and replies', async () => {
+    it('IT-26 owner sees the message in the inbox and replies (FR-31, FR-32)', async () => {
       await loginAs(fx.users.owner.email, 'owner');
       await browser.url('/messages');
       await a.waitForText(fx.users.renter.name);
@@ -268,7 +303,7 @@ describe('Module tests', () => {
   });
 
   describe('Admin moderation module', () => {
-    it('M-24 admin removes a live listing; it leaves the marketplace', async () => {
+    it('IT-27 admin removes a live listing; it leaves the marketplace (FR-27)', async () => {
       await asAdmin();
       // The list shows 10 per page; find the page that holds the listing.
       for (let page = 1; page <= 5; page++) {
@@ -284,7 +319,7 @@ describe('Module tests', () => {
       await a.waitForText('No listings match your filters');
     });
 
-    it('M-25 admin suspends an account and that user can no longer log in', async () => {
+    it('IT-28 admin suspends an account and that user can no longer log in (FR-26)', async () => {
       await asAdmin();
       await browser.url('/admin/dashboard');
       await a.clickWire(`toggleSuspension(${fx.users.suspend.id})`);

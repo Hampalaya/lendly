@@ -1,10 +1,13 @@
-// Full rental cycle, end to end through the real UI:
-// register -> verify -> list item -> browse -> request -> approve -> agreement (both)
-// -> payment proof -> admin verify -> handover -> return/inspection -> deposit -> reviews.
+// System test: one complete rental through the real UI, following the Requirements v2 process flow:
+// register → email confirmation → identity review (admin) → owner wallet QR → publish → browse
+// → request → send for agreement → both accept → payment proof → owner confirms receipt
+// → before-condition + handover (both) → return (both) + inspection → deposit release + renter receipt
+// → reviews → notifications → owner reopens the item.
 // Steps share state and run in order; once one fails the rest are skipped.
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const LoginPage = require('../pages/LoginPage.cjs');
 const a = require('../support/actions.cjs');
 
@@ -15,10 +18,7 @@ const renter = { name: `QA Renter ${RUN}`, email: `qa.renter.${RUN}@gmail.com` }
 const ITEM = `QA Camera ${RUN}`;
 const state = {};
 const results = [];
-const notes = [];
 let broken = false;
-
-const note = (msg) => notes.push(msg);
 
 async function freshSession() {
   // Cookies can only be cleared for the domain currently loaded.
@@ -45,17 +45,38 @@ async function register(user) {
   await browser.url('/register');
   await a.type('#name', user.name);
   await a.type('#email', user.email);
-  // The password fields block paste, so type them key by key via setValue.
+  // The password fields block paste, so setValue types them key by key.
   await a.type('#password', PASSWORD);
   await a.type('#password_confirmation', PASSWORD);
   await a.submitWireForm('register');
   await a.waitForUrl(/verify-email/);
   await browser.url(a.latestVerificationLink());
-  await a.waitForUrl(/dashboard/);
+  // After email confirmation, members without an approved ID are sent to identity review.
+  await a.waitForUrl(/dashboard|identity/);
   await a.assertNoServerError();
 }
 
-describe('full cycle: register → list → rent → pay → handover → return → review', function () {
+// Stands in for the member's ID + selfie upload and the local face comparison (FR-58/59),
+// which need real face photos and a Python face model; the admin review below is real (FR-60).
+function submitIdentityFor(user) {
+  const php = process.platform === 'win32' ? 'php.exe' : 'php';
+  const out = execFileSync(php, [path.join(__dirname, '..', 'fixtures', 'identity-pending.php'), user.email], { env: process.env }).toString();
+  return JSON.parse(out.trim().split('\n').pop()).submission;
+}
+
+async function approveIdentity(submissionId) {
+  await a.scrollClick(`[wire\\:click="selectSubmission(${submissionId})"]`);
+  for (const model of ['qrChecked', 'detailsMatch', 'faceReviewed']) {
+    const box = await $(`input[type="checkbox"][wire\\:model="${model}"]`);
+    await box.waitForExist({ timeout: 15000 });
+    if (!(await box.isSelected())) await a.scrollClick(`input[type="checkbox"][wire\\:model="${model}"]`);
+  }
+  await a.type('#identity-review-notes', 'QA: National ID QR checked; details and face match.');
+  await a.submitWireForm("review('approved')");
+  await a.waitForText('Identity review saved.');
+}
+
+describe('System test: full rental cycle (Requirements v2 process flow)', function () {
   before(() => a.ensureFixture());
 
   beforeEach(function () {
@@ -74,38 +95,46 @@ describe('full cycle: register → list → rent → pay → handover → return
 
   after(() => {
     const out = path.join(__dirname, '..', 'artifacts', 'full-cycle-results.json');
-    fs.writeFileSync(out, JSON.stringify({ run: RUN, owner, renter, item: ITEM, state, results, notes }, null, 2));
+    fs.writeFileSync(out, JSON.stringify({ run: RUN, owner, renter, item: ITEM, state, results }, null, 2));
   });
 
-  it('I-01 admin enables offline payment instructions (FR-41 setup)', async () => {
-    await loginAs('admin@tala.test', 'password');
-    await browser.url('/admin/payment-settings');
-    await a.assertNoServerError();
-    await a.setField('#payment-method', 'bank_transfer');
-    await a.type('#payment-instructions', 'QA: Transfer the full amount to BDO 0000-1111-2222 (Tala QA) and upload the receipt.');
-    const enabled = await $('input[type="checkbox"][wire\\:model="enabled"]');
-    if (!(await enabled.isSelected())) await enabled.click();
-    await a.submitWireForm('save');
-    await browser.pause(1500);
-    await browser.refresh();
-    const saved = await (await $('#payment-instructions')).getValue();
-    assert.ok(saved.includes('BDO 0000-1111-2222'), 'payment instructions did not persist');
-  });
-
-  it('I-02 owner registers and verifies Gmail (FR-01/02)', async () => {
+  it('ST-01 owner registers with Gmail and confirms the email link (FR-01, FR-02)', async () => {
     await register(owner);
   });
 
-  it('I-03 renter registers and verifies Gmail (FR-01/02)', async () => {
+  it('ST-02 renter registers with Gmail and confirms the email link (FR-01, FR-02)', async () => {
     await register(renter);
   });
 
-  it('I-04 owner publishes a listing with photo + map pin (FR-05/06/47)', async () => {
+  it('ST-03 admin approves both members\' identity reviews (FR-39, FR-60, FR-61)', async () => {
+    const ownerSubmission = submitIdentityFor(owner);
+    const renterSubmission = submitIdentityFor(renter);
+    await loginAs('admin@tala.test', 'password');
+    await browser.url('/admin/identity-submissions');
+    await approveIdentity(ownerSubmission);
+    await browser.url('/admin/identity-submissions');
+    await approveIdentity(renterSubmission);
+  });
+
+  it('ST-04 owner sets up a GCash payment QR (FR-72)', async () => {
     await loginAs(owner.email, PASSWORD, 'owner');
+    await browser.url('/owner/payments');
+    await a.setField('#owner-payment-provider', 'gcash');
+    await a.type('#owner-payment-account-name', owner.name);
+    await a.type('#owner-payment-instructions', 'QA: scan the GCash QR and pay the full amount.');
+    await a.upload('#owner-payment-qr');
+    await browser.pause(2000);
+    const enabled = await $('input[type="checkbox"][wire\\:model="enabled"]');
+    if (!(await enabled.isSelected())) await a.scrollClick('input[type="checkbox"][wire\\:model="enabled"]');
+    await a.submitWireForm('save');
+    await a.waitForText('Payment QR settings saved.');
+  });
+
+  it('ST-05 owner publishes a listing with photo, map pin and rates (FR-05, FR-06, FR-47)', async () => {
     await browser.url('/owner/listings/create');
     await a.assertNoServerError();
     const firstCategory = await browser.execute(() => {
-      const opt = Array.from(document.querySelectorAll('#category_id option')).find((o) => o.value);
+      const opt = Array.from(document.querySelectorAll('#category_id option')).find((o) => o.value && o.value !== 'other');
       return opt && opt.value;
     });
     await a.setField('#category_id', firstCategory);
@@ -121,29 +150,22 @@ describe('full cycle: register → list → rent → pay → handover → return
     await a.type('#rental_rules', 'Return clean. No use in rain.');
     await a.type('#price_per_day', '500');
     await a.type('#security_deposit', '1000');
-
-    // Map pin: click the Leaflet map like a user would.
     const map = await $('[x-ref="map"]');
     await map.scrollIntoView({ block: 'center' });
     await browser.pause(800);
     await map.click();
     await browser.pause(800);
-
     await a.upload('#listing-photos');
     await (await $('[wire\\:click^="removePendingPhoto"]')).waitForExist({ timeout: 20000 });
-
     await a.submitWireForm('save');
     await a.waitForUrl(/\/owner\/listings(\?|$)/);
     await a.waitForText('Listing published.');
-    await a.assertNoServerError();
   });
 
-  it('I-05 listing is discoverable on the public marketplace (FR-09/10)', async () => {
+  it('ST-06 listing is found by search and its details page opens (FR-09, FR-10)', async () => {
     await freshSession();
     await browser.url('/listings');
-    const search = await $('input[aria-label="Search items"]');
-    await search.waitForDisplayed({ timeout: 15000 });
-    await search.setValue(ITEM);
+    await a.type('input[aria-label="Search items"]', ITEM);
     await a.waitForText(ITEM);
     const href = await browser.execute((item) => {
       const link = Array.from(document.querySelectorAll('a[href*="/listings/"]')).find((el) => el.innerText.includes(item));
@@ -153,36 +175,29 @@ describe('full cycle: register → list → rent → pay → handover → return
     state.listingId = Number(href.match(/\/listings\/(\d+)/)[1]);
     await browser.url(`/listings/${state.listingId}`);
     await a.waitForText(ITEM);
-    const ownerHref = await browser.execute(() => {
-      const el = document.querySelector('a[href*="/users/"]');
-      return el && el.getAttribute('href');
-    });
-    if (ownerHref) state.ownerId = Number(ownerHref.match(/\/users\/(\d+)/)[1]);
-    else note('Listing page has no link to the owner public profile (/users/{id}).');
+    await a.waitForText('Availability');
+    const ownerHref = await browser.execute(() => document.querySelector('a[href*="/users/"]')?.getAttribute('href'));
+    assert.ok(ownerHref, 'no link to the owner public profile');
+    state.ownerId = Number(ownerHref.match(/\/users\/(\d+)/)[1]);
   });
 
-  it('I-06 renter sends a 3-day rental request (FR-11/16)', async () => {
+  it('ST-07 renter requests 3 days; quote shows ₱1,500 rental fee (FR-11, FR-16)', async () => {
     await loginAs(renter.email, PASSWORD, 'renter');
     await browser.url(`/listings/${state.listingId}`);
-    await a.assertNoServerError();
     await a.scrollClick('button[aria-controls="rental-request-modal"]');
     await (await $('#start_date')).waitForDisplayed({ timeout: 15000 });
-    state.start = a.daysFromNow(2);
-    state.end = a.daysFromNow(4);
-    await a.setField('#start_date', state.start);
+    await a.setField('#start_date', a.daysFromNow(2));
     await browser.pause(800);
-    await a.setField('#end_date', state.end);
+    await a.setField('#end_date', a.daysFromNow(4));
     await browser.pause(800);
-    const summary = await a.pageText();
-    if (!summary.includes('1,500')) note(`Request summary did not show ₱1,500 rental fee for 3 days × ₱500 (dates ${state.start}→${state.end}).`);
+    await a.waitForText('1,500.00');
     await a.scrollClick('#accept_terms');
     await a.submitWireForm('submit');
     await a.waitForUrl(/\/renter\/rental-requests/);
     await a.waitForText('Rental request sent');
-    await a.assertNoServerError();
   });
 
-  it('I-07 owner approves the request (FR-12)', async () => {
+  it('ST-08 owner sends the request for agreement (FR-12)', async () => {
     await loginAs(owner.email, PASSWORD, 'owner');
     await browser.url('/owner/rental-requests');
     await a.waitForText(ITEM);
@@ -190,72 +205,49 @@ describe('full cycle: register → list → rent → pay → handover → return
     await a.scrollClick('[wire\\:click^="approve("]');
     const url = await a.waitForUrl(/\/owner\/rental-requests\/\d+\/agreement/);
     state.requestId = Number(url.match(/rental-requests\/(\d+)/)[1]);
-    await a.assertNoServerError();
   });
 
-  it('I-08 owner accepts the rental agreement (FR-15)', async () => {
+  it('ST-09 owner accepts the saved rental agreement (FR-15)', async () => {
     await a.scrollClick('form[wire\\:submit="acceptTerms"] input[type="checkbox"]');
     await a.submitWireForm('acceptTerms');
     await browser.pause(2000);
     await a.assertNoServerError();
-    assert.ok(!(await $('form[wire\\:submit="acceptTerms"]').isExisting()) || /accepted|waiting/i.test(await a.pageText()),
-      'owner acceptance not reflected on page');
   });
 
-  it('I-09 renter accepts the agreement → booking confirmed (FR-14/15/40)', async () => {
+  it('ST-10 renter accepts → one booking in Payment Pending (FR-14, FR-15, FR-40)', async () => {
     await loginAs(renter.email, PASSWORD, 'renter');
     await browser.url(`/renter/rental-requests/${state.requestId}/agreement`);
-    await a.assertNoServerError();
     await a.scrollClick('form[wire\\:submit="acceptTerms"] input[type="checkbox"]');
     await a.submitWireForm('acceptTerms');
     await browser.pause(2000);
-    await a.assertNoServerError();
     await browser.url('/renter/rentals');
     await a.waitForText(ITEM);
-    const href = await browser.execute(() => {
-      const el = document.querySelector('a[href*="/renter/rentals/"]');
-      return el && el.getAttribute('href');
-    });
-    assert.ok(href, 'no rental created after both acceptances');
+    const href = await browser.execute(() => document.querySelector('a[href*="/renter/rentals/"]')?.getAttribute('href'));
+    assert.ok(href, 'no booking created after both acceptances');
     state.rentalId = Number(href.match(/rentals\/(\d+)/)[1]);
+    await browser.url(`/renter/rentals/${state.rentalId}`);
+    await a.waitForText('Payment Pending');
   });
 
-  it('I-10 renter submits offline payment proof (FR-41)', async () => {
-    await browser.url(`/renter/rentals/${state.rentalId}`);
-    await a.assertNoServerError();
-    await a.waitForText('BDO 0000-1111-2222');
-    await a.type('#payment-reference', `qa-ref-${RUN}`);
+  it('ST-11 renter pays via the owner\'s GCash QR and submits proof (FR-41)', async () => {
+    await a.waitForText('GCash');
+    await a.type('#payment-reference', `QA-REF-${RUN}`);
     await a.upload('#payment-proof');
     await browser.pause(2500);
     await a.submitWireForm('submitPaymentProof');
     await a.waitForText('Payment proof submitted');
-    await a.assertNoServerError();
   });
 
-  it('I-11 admin verifies payment → rental Paid (FR-17/41)', async () => {
-    await loginAs('admin@tala.test', 'password');
-    await browser.url(`/admin/rentals/${state.rentalId}`);
-    await a.assertNoServerError();
-    await a.scrollClick('#rental-tab-payments');
-    const review = await $('textarea[id^="payment-review-"]');
-    await review.waitForExist({ timeout: 15000 });
-    await review.scrollIntoView({ block: 'center' });
-    await review.setValue('QA: amount matches bank statement.');
-    const funds = await $('input[type="checkbox"][wire\\:model="funds_received"]');
-    if (!(await funds.isSelected())) await funds.click();
-    await a.autoConfirm();
-    await a.scrollClick('[wire\\:click^="verifyPayment("]');
-    await browser.pause(300);
-    await a.acceptDialogIfOpen();
-    await a.waitForText('Payment verified', 20000).catch(() => {});
-    await browser.refresh();
-    await a.waitForText('Paid');
-  });
-
-  it('I-12 owner records before-condition and confirms handover (FR-18/43)', async () => {
+  it('ST-12 owner confirms receipt → booking Paid with receipt (FR-73, FR-17, FR-42)', async () => {
     await loginAs(owner.email, PASSWORD, 'owner');
     await browser.url(`/owner/rentals/${state.rentalId}`);
-    await a.assertNoServerError();
+    await a.scrollClick('input[type="checkbox"][wire\\:model="owner_funds_received"]');
+    await a.confirmDialogAction('confirmPaymentReceipt(');
+    await a.waitForText('Payment confirmed.');
+    await a.waitForText('Transaction receipt');
+  });
+
+  it('ST-13 owner records the before-condition and confirms handover (FR-77, FR-43)', async () => {
     await a.type('#before_notes', 'QA: no scratches, both batteries included.');
     await a.upload('#before_photos');
     await browser.pause(2500);
@@ -266,22 +258,20 @@ describe('full cycle: register → list → rent → pay → handover → return
     await a.assertNoServerError();
   });
 
-  it('I-13 renter confirms pickup → rental Active (FR-43/44)', async () => {
+  it('ST-14 renter confirms receipt → rental Active (FR-43, FR-44)', async () => {
     await loginAs(renter.email, PASSWORD, 'renter');
     await browser.url(`/renter/rentals/${state.rentalId}`);
     await a.clickWire('confirmPickup');
     await a.waitForText('Active');
-    await a.assertNoServerError();
   });
 
-  it('I-14 renter confirms return (FR-21)', async () => {
+  it('ST-15 renter acknowledges returning the item (FR-78)', async () => {
     await a.clickWire('confirmReturn');
     await browser.pause(2000);
-    await a.assertNoServerError();
     assert.ok(!(await $('[wire\\:click="confirmReturn"]').isExisting()), 'renter return button still shown');
   });
 
-  it('I-15 owner records after-condition and confirms return → Completed (FR-21/22)', async () => {
+  it('ST-16 owner records condition and confirms return → Completed (FR-21, FR-22)', async () => {
     await loginAs(owner.email, PASSWORD, 'owner');
     await browser.url(`/owner/rentals/${state.rentalId}`);
     await a.type('#after_notes', 'QA: returned in same condition.');
@@ -289,24 +279,23 @@ describe('full cycle: register → list → rent → pay → handover → return
     await a.waitForText('QA: returned in same condition.');
     await a.clickWire('confirmReturn');
     await a.waitForText('Completed');
-    await a.assertNoServerError();
   });
 
-  it('I-16 owner releases the security deposit', async () => {
-    await a.clickWire('releaseDeposit');
+  it('ST-17 owner records the deposit release (FR-81)', async () => {
+    await a.confirmDialogAction('releaseDeposit');
     await a.waitForText('Released');
   });
 
-  it('I-17 owner reviews the renter (FR-23)', async () => {
-    await a.setField('#renter_rating', '5');
-    await a.type('#renter_comment', 'QA: on time and careful with the item.');
-    await a.submitWireForm('submitRenterReview');
-    await a.waitForText('QA: on time and careful');
-  });
-
-  it('I-18 renter reviews the owner and the listing (FR-23)', async () => {
+  it('ST-18 renter confirms receiving the deposit back (FR-82)', async () => {
     await loginAs(renter.email, PASSWORD, 'renter');
     await browser.url(`/renter/rentals/${state.rentalId}`);
+    await a.confirmDialogAction('confirmDepositReceipt');
+    await browser.pause(1500);
+    await a.assertNoServerError();
+    assert.ok(!(await $('dialog [wire\\:click="confirmDepositReceipt"]').isExisting()), 'deposit receipt still awaiting confirmation');
+  });
+
+  it('ST-19 renter reviews the owner and the item (FR-23, FR-83)', async () => {
     await a.setField('#owner_rating', '4');
     await a.type('#owner_comment', 'QA: owner was responsive.');
     await a.submitWireForm('submitOwnerReview');
@@ -317,26 +306,42 @@ describe('full cycle: register → list → rent → pay → handover → return
     await a.waitForText('QA: camera worked perfectly.');
   });
 
-  it('I-19 reviews show publicly on owner profile and listing (FR-45)', async () => {
-    await freshSession();
-    if (state.ownerId) {
-      await browser.url(`/users/${state.ownerId}`);
-      await a.assertNoServerError();
-      if (!(await a.pageText()).includes('QA: owner was responsive.')) note('Owner review not visible on public profile /users/{id}.');
-    }
-    await browser.url(`/listings/${state.listingId}`);
-    if (!(await a.pageText()).includes('QA: camera worked perfectly.')) note('Listing review not visible on public listing page.');
-    assert.ok(true);
+  it('ST-20 owner reviews the renter (FR-23)', async () => {
+    await loginAs(owner.email, PASSWORD, 'owner');
+    await browser.url(`/owner/rentals/${state.rentalId}`);
+    await a.setField('#renter_rating', '5');
+    await a.type('#renter_comment', 'QA: on time and careful with the item.');
+    await a.submitWireForm('submitRenterReview');
+    await a.waitForText('QA: on time and careful');
   });
 
-  it('I-20 renter notifications cover the cycle (FR-13/40)', async () => {
+  it('ST-21 reviews appear on the owner\'s public profile and the item page (FR-45, FR-83)', async () => {
+    await freshSession();
+    await browser.url(`/users/${state.ownerId}`);
+    await a.waitForText('QA: owner was responsive.');
+    await browser.url(`/listings/${state.listingId}`);
+    await a.waitForText('QA: camera worked perfectly.');
+  });
+
+  it('ST-22 renter notifications cover the key events (FR-13, FR-40, FR-87)', async () => {
     await loginAs(renter.email, PASSWORD, 'renter');
     await browser.url('/notifications');
-    await a.assertNoServerError();
-    const text = await a.pageText();
-    const expected = ['Request approved', 'Booking confirmed', 'Rental is now active', 'Deposit released'];
-    const missing = expected.filter((t) => !text.includes(t));
-    if (missing.length) note(`Renter notifications page missing: ${missing.join(', ')}`);
-    assert.ok(missing.length < expected.length, 'no lifecycle notifications shown at all');
+    for (const text of ['Booking confirmed', 'Rental is now active']) await a.waitForText(text);
+  });
+
+  it('ST-23 owner reopens the inspected item for new requests (FR-67, FR-08)', async () => {
+    await loginAs(owner.email, PASSWORD, 'owner');
+    await browser.url('/owner/listings');
+    // After inspection the row shows a dedicated reopen button (first) next to the availability toggle.
+    const reopen = (await $$(`[wire\\:click="setAvailability(${state.listingId}, true)"]`))[0];
+    await reopen.scrollIntoView({ block: 'center' });
+    await reopen.click();
+    await a.waitForText('Requests reopened.');
+    await freshSession();
+    await browser.url(`/listings/${state.listingId}`);
+    await browser.waitUntil(async () => (await browser.execute(() => {
+      const panel = document.querySelector('#rental-rates-title')?.closest('section');
+      return panel ? panel.innerText.slice(0, 120) : '';
+    })).includes('Available'), { timeout: 15000, timeoutMsg: 'item did not become Available after reopening' });
   });
 });

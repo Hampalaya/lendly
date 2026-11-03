@@ -32,6 +32,14 @@ async function waitForText(text, timeout = 20000) {
   });
 }
 
+// Case-insensitive variant: labels styled with CSS uppercase come back uppercased from innerText.
+async function waitForTextI(text, timeout = 20000) {
+  await browser.waitUntil(async () => (await pageText()).toLowerCase().includes(text.toLowerCase()), {
+    timeout,
+    timeoutMsg: `Text never appeared (any case): "${text}"`,
+  });
+}
+
 async function waitForUrl(re, timeout = 20000) {
   await browser.waitUntil(async () => re.test(await browser.getUrl()), {
     timeout,
@@ -81,6 +89,26 @@ async function clickWire(method) {
   await scrollClick(`[wire\\:click="${method}"]`);
   await browser.pause(300);
   await acceptDialogIfOpen();
+}
+
+// Two-step actions (x-action-confirmation): click the trigger that opens the in-page
+// confirmation dialog, then the dialog's confirm button whose wire:click starts with `prefix`.
+async function confirmDialogAction(prefix) {
+  const found = await browser.execute((p) => {
+    document.querySelectorAll('[data-e2e-trigger]').forEach((el) => el.removeAttribute('data-e2e-trigger'));
+    const confirm = Array.from(document.querySelectorAll('dialog [wire\\:click]')).find((el) => el.getAttribute('wire:click').startsWith(p));
+    if (!confirm) return false;
+    const wrapper = confirm.closest('dialog').parentElement;
+    const trigger = Array.from(wrapper.querySelectorAll('button')).find((b) => !b.closest('dialog'));
+    if (!trigger) return false;
+    trigger.setAttribute('data-e2e-trigger', '1');
+    return true;
+  }, prefix);
+  if (!found) throw new Error(`No confirmation dialog for action "${prefix}"`);
+  await scrollClick('[data-e2e-trigger="1"]');
+  const confirm = await $(`dialog[open] [wire\\:click^="${prefix}"]`);
+  await confirm.waitForClickable({ timeout: 10000 });
+  await confirm.click();
 }
 
 async function submitWireForm(method) {
@@ -140,7 +168,7 @@ const daysFromNow = (n) => {
 };
 
 module.exports = {
-  esc, pageText, waitForText, waitForUrl, assertNoServerError, scrollClick, autoConfirm, acceptDialogIfOpen,
-  clickWire, submitWireForm, type, setField, upload, screenshot, latestVerificationLink,
+  esc, pageText, waitForText, waitForTextI, waitForUrl, assertNoServerError, scrollClick, autoConfirm, acceptDialogIfOpen,
+  clickWire, submitWireForm, confirmDialogAction, type, setField, upload, screenshot, latestVerificationLink,
   daysFromNow, ensureFixture,
 };
