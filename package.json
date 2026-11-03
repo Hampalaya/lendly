@@ -8,7 +8,7 @@
         "test:map": "node --test tests/JavaScript/map-location.test.mjs",
         "test:e2e": "bash tests/e2e/run.sh",
         "test:e2e:component": "bash tests/e2e/run.sh --spec tests/e2e/specs/component.e2e.cjs",
-        "test:e2e:module": "bash tests/e2e/run.sh --spec tests/e2e/specs/module.e2e.cjs",
+        "test:e2e:module": "bash tests/e2e/run.sh --spec tests/e2e/specs/module.e2e.cjs --spec tests/e2e/specs/features.e2e.cjs --spec tests/e2e/specs/extra.e2e.cjs",
         "test:e2e:integrated": "bash tests/e2e/run.sh --spec tests/e2e/specs/full-cycle.e2e.cjs",
         "test:e2e:report": "node tests/e2e/report/build-report.cjs"
     },

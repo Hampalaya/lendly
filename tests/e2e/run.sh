@@ -8,7 +8,8 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 export PATH="/c/xampp/php:$PATH"
 
-PORT=8000
+# Use another port (E2E_PORT=8001 npm run test:e2e) if 8000 is busy with your own dev server.
+PORT="${E2E_PORT:-8000}"
 BASE_URL="http://127.0.0.1:$PORT"
 export DB_CONNECTION=sqlite
 export DB_DATABASE="$(pwd -W)/database/e2e.sqlite"

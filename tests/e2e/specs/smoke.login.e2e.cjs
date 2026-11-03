@@ -4,14 +4,14 @@ const LoginPage = require('../pages/LoginPage.cjs');
 const { waitForUrlContains } = require('../support/livewire.cjs');
 
 describe('smoke: login', () => {
-  it('S-04 login form shows email, password and submit', async () => {
+  it('SM-04 login form shows email, password and submit (FR-03)', async () => {
     await LoginPage.open();
     assert.ok(await (await LoginPage.emailInput).isDisplayed());
     assert.ok(await (await LoginPage.passwordInput).isDisplayed());
     assert.ok(await (await LoginPage.submitButton).isDisplayed());
   });
 
-  it('S-05 member login reaches the Owner/Renter picker', async () => {
+  it('SM-05 member login reaches the Owner/Renter picker (FR-03)', async () => {
     const email = process.env.E2E_MEMBER_EMAIL || 'member@tala.test';
     const password = process.env.E2E_MEMBER_PASSWORD || 'password';
     await LoginPage.open();
