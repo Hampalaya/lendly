@@ -69,7 +69,7 @@ class PhaseFivePaymentsTest extends TestCase
         $rental = $this->rental();
         $admin = User::factory()->admin()->create();
         $submission = RentalPayments::submit($rental, $rental->renter, 'OWNER-PAID', $this->paymentProof());
-        Livewire::actingAs($rental->renter)->test(Index::class)->assertSee('Awaiting payment confirmation')->assertDontSee('Pay now');
+        Livewire::actingAs($rental->renter)->test(Index::class)->assertSee('Awaiting Payment Confirmation')->assertDontSee('Pay Now');
         Livewire::test(Show::class, ['rental' => $rental])->assertSee('awaiting owner confirmation')->assertDontSee('Do you want to pay now?')->assertSee('Processing fee');
         $this->assertFalse(Gate::forUser($admin)->allows('adminVerifyPayment', $rental->fresh()));
         $this->assertFalse(Gate::forUser($admin)->allows('adminRejectPayment', $rental->fresh()));

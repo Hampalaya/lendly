@@ -14,6 +14,7 @@ use App\Models\Rental;
 use App\Models\SecurityDeposit;
 use App\Models\User;
 use App\Notifications\TalaNotification;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -23,6 +24,49 @@ use Throwable;
 
 class RentalPayments
 {
+    public static function availableWalletsFor(int $ownerId, bool $lock = false): Collection
+    {
+        $query = OwnerPaymentSetting::where('user_id', $ownerId)->where('enabled', true)
+            ->whereIn('provider', array_keys(OwnerPaymentSetting::PROVIDERS))->orderBy('id');
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->get()->filter(fn ($wallet) => trim($wallet->account_name) !== '' && self::storedFile($wallet->qr_path));
+    }
+
+    public static function selectWallet(Rental $rental, User $renter, int $walletId): void
+    {
+        self::expireReservation($rental);
+
+        DB::transaction(function () use ($rental, $renter, $walletId) {
+            $rental = Rental::lockForUpdate()->findOrFail($rental->id);
+            $renter = User::withTrashed()->findOrFail($renter->id);
+            Gate::forUser($renter)->authorize('pay', $rental);
+            abort_unless(self::activeMember($renter) && $renter->id === $rental->renter_id, 403);
+            if ($rental->paymentSubmissions()->exists()) {
+                throw ValidationException::withMessages(['payment_wallet' => 'The wallet cannot be changed after payment proof has been submitted.']);
+            }
+
+            $owner = User::withTrashed()->find($rental->owner_id);
+            $wallet = self::availableWalletsFor($rental->owner_id, lock: true)->firstWhere('id', $walletId);
+            if (! self::activeMember($owner) || ! $wallet) {
+                throw ValidationException::withMessages(['payment_wallet' => 'This e-wallet is no longer available. Choose another saved wallet.']);
+            }
+
+            $rental->forceFill(['payment_destination' => self::walletDestination($wallet)])->save();
+        });
+    }
+
+    private static function walletDestination(OwnerPaymentSetting $wallet): array
+    {
+        return [
+            'source' => 'owner_wallet', 'method' => $wallet->provider, 'payee_user_id' => $wallet->user_id,
+            'account_name' => $wallet->account_name, 'instructions' => $wallet->instructions ?? '',
+            'qr_path' => $wallet->qr_path,
+        ];
+    }
+
     public static function expireReservations(): int
     {
         $count = 0;
@@ -77,16 +121,10 @@ class RentalPayments
             }
 
             // Settings replacement locks this same row before checking whether an old QR is referenced.
-            $settings = OwnerPaymentSetting::where('user_id', $rental->owner_id)->lockForUpdate()->first();
+            $settings = self::availableWalletsFor($rental->owner_id, lock: true)->first();
             $owner = User::withTrashed()->find($rental->owner_id);
-            if (self::activeMember($owner) && $settings?->enabled
-                && in_array($settings->provider, ['maya', 'gcash'], true)
-                && trim($settings->account_name) !== '' && self::storedFile($settings->qr_path)) {
-                $destination = [
-                    'source' => 'owner_wallet', 'method' => $settings->provider, 'payee_user_id' => $owner->id,
-                    'account_name' => $settings->account_name, 'instructions' => $settings->instructions ?? '',
-                    'qr_path' => $settings->qr_path,
-                ];
+            if (self::activeMember($owner) && $settings) {
+                $destination = self::walletDestination($settings);
             } else {
                 if (($rental->rentalRequest?->agreement_terms['payment_review'] ?? null) === 'owner') {
                     return null;

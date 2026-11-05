@@ -1,12 +1,14 @@
 <div>
-    <x-page-header eyebrow="Owner interface" title="Owner dashboard" subtitle="Manage your listings, rental requests, and earnings." />
+    <x-page-header :panel="true" eyebrow="Owner interface" title="Owner dashboard" subtitle="Manage your listings, rental requests, and earnings.">
+        <x-slot:shortcuts>
+            <a href="{{ route('owner.listings.create') }}" wire:navigate class="page-header__icon page-header__icon--label">
+                <x-icon name="tag" class="h-5 w-5" aria-hidden="true" />
+                <span>New listing</span>
+            </a>
+        </x-slot:shortcuts>
+    </x-page-header>
     <div class="w-full space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         <x-dashboard-progress :interface="$interface" :request-progress="$requestProgress" :member-rentals-by-status="$memberRentalsByStatus" :awaiting-agreement-count="$awaitingAgreementCount" :identity-progress="$identityProgress" :proofs-under-review-count="$proofsUnderReviewCount" />
-        <div class="flex justify-end">
-            <a href="{{ route('owner.listings.create') }}" wire:navigate class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">
-                <x-icon name="tag" class="h-4 w-4" /> New listing
-            </a>
-        </div>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <x-stat-card label="Active listings" :value="$activeListingsCount" icon="tag" accent="blue" />
             <x-stat-card label="Listings awaiting approval" :value="$pendingListingsCount" icon="inbox" accent="amber" />

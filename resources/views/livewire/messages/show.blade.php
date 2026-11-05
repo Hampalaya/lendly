@@ -1,7 +1,7 @@
-<div wire:poll.5s.visible>
-    <x-page-header title="Messages" subtitle="Conversations with owners and renters about your listings and rentals." />
+<div class="messages-page" wire:poll.5s.visible>
+    <x-page-header title="Messages" />
 
-    <x-messages.shell :threads="$threads" :active-id="$activeId" :search="$search">
+    <x-messages.shell :threads="$threads" :active-id="$activeId" :search="$search" :thread-filter="$threadFilter" :thread-sort="$threadSort">
         @if (! $listing->trashed() && $listing->isPublished())
             <a href="{{ route('listings.show', $listing) }}" wire:navigate class="flex min-h-11 shrink-0 items-center gap-2 border-b border-slate-100 px-5 py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
                 <x-icon name="chevron-down" class="h-4 w-4 rotate-90" aria-hidden="true" /> Back to listing

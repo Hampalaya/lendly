@@ -82,7 +82,7 @@ Route::middleware(['auth', 'verified', 'role:renter'])->prefix('renter')->name('
 
 Route::middleware(['auth', 'verified', 'role:owner'])->prefix('owner')->name('owner.')->group(function () {
     Route::get('payments', OwnerPaymentSettings::class)->name('payments.settings');
-    Route::get('payments/qr', [OwnerPaymentQrController::class, 'current'])->name('payments.qr');
+    Route::get('payments/qr/{wallet?}', [OwnerPaymentQrController::class, 'current'])->whereNumber('wallet')->name('payments.qr');
     Route::get('dashboard', MemberDashboard::class)->name('dashboard');
     Route::get('listings', OwnerListingsIndex::class)->name('listings.index');
     Route::get('listings/create', OwnerListingForm::class)->name('listings.create');

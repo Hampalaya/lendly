@@ -8,6 +8,16 @@ use Illuminate\Support\Facades\Storage;
 
 class OwnerPaymentSetting extends Model
 {
+    public const PROVIDERS = [
+        'maya' => 'Maya',
+        'gcash' => 'GCash',
+        'grabpay' => 'GrabPay',
+        'shopeepay' => 'ShopeePay',
+        'coins_ph' => 'Coins.ph',
+        'gotyme' => 'GoTyme',
+        'palawanpay' => 'PalawanPay',
+    ];
+
     protected $fillable = ['user_id', 'provider', 'account_name', 'instructions', 'qr_path', 'enabled'];
 
     protected $hidden = ['qr_path'];
@@ -19,7 +29,12 @@ class OwnerPaymentSetting extends Model
 
     public static function currentFor(int $userId): ?self
     {
-        return self::where('user_id', $userId)->first();
+        return self::where('user_id', $userId)->orderBy('id')->first();
+    }
+
+    public function providerLabel(): string
+    {
+        return self::PROVIDERS[$this->provider] ?? $this->provider;
     }
 
     public static function deleteUnreferencedQr(string $path): void

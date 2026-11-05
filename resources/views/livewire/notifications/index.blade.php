@@ -1,15 +1,21 @@
 <div wire:poll.5s.visible>
     <x-page-header title="Notifications" subtitle="Updates about your requests, rentals, and disputes." maxWidth="max-w-3xl" />
-    <div class="px-4 sm:px-6 lg:px-8">
-        <x-record-controls :filters="['all' => 'All notifications', 'unread' => 'Unread', 'read' => 'Read']" />
-        <label class="block text-sm font-medium text-slate-600">Notification category
-            <select wire:model.live="typeFilter" class="mt-1 rounded-lg border-slate-300 text-sm">
-                <option value="all">All categories</option><option value="verification">Verification</option><option value="listings">Listings</option><option value="requests">Requests and approvals</option><option value="payments">Payments and deposits</option><option value="messages">Messages</option><option value="rentals">Rentals and disputes</option>
-            </select>
-        </label>
+    <div class="mx-auto max-w-3xl px-4 pt-3 sm:px-6 lg:px-8">
+        <x-record-toolbar :filter="$filter" :sort="$recordSort" :filters="['all' => 'All Notifications', 'unread' => 'Unread', 'read' => 'Read']" placeholder="Search notifications..." search-label="Search notifications" label="Notification controls">
+            <x-slot:additionalFilters>
+                <label class="min-w-0">
+                    <span class="sr-only">Notification category</span>
+                    <select wire:model.live="typeFilter" class="block h-10 w-44 max-w-full rounded-lg border-slate-300 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                        @foreach (['all' => 'All Categories', 'verification' => 'Verification', 'listings' => 'Listings', 'requests' => 'Requests and approvals', 'payments' => 'Payments and deposits', 'messages' => 'Messages', 'rentals' => 'Rentals and disputes'] as $value => $category)
+                            <option value="{{ $value }}" @selected($typeFilter === $value)>{{ $category }}</option>
+                        @endforeach
+                    </select>
+                </label>
+            </x-slot:additionalFilters>
+        </x-record-toolbar>
     </div>
 
-    <div class="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-3xl px-4 pb-6 pt-3 sm:px-6 lg:px-8">
         <div class="mb-4 flex justify-end">
             <button type="button" wire:click="markAllAsRead" class="text-sm font-medium text-blue-600 hover:text-blue-800">Mark all read</button>
         </div>

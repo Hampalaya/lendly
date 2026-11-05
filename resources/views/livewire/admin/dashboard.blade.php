@@ -1,5 +1,5 @@
 <div>
-    <x-page-header eyebrow="Administration" title="Admin dashboard" subtitle="Platform overview and user management." />
+    <x-page-header :panel="true" eyebrow="Administration" title="Admin dashboard" subtitle="Platform overview and user management." />
 
     <div class="w-full space-y-8 px-4 py-8 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -71,18 +71,9 @@
                         <h2 class="text-base font-bold text-slate-900">Users</h2>
                     </div>
                 </div>
-                <div class="relative w-full max-w-xs">
-                    <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input
-                        type="text"
-                        wire:model.live.debounce.300ms="search"
-                        aria-label="Search users" placeholder="Search by name or email..."
-                        class="w-full rounded-lg border-slate-300 pl-9 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
-                </div>
             </div>
 
-            <x-record-controls :show-search="false" filter-model="userStatus" :filters="['all' => 'All accounts', 'active' => 'Active', 'suspended' => 'Suspended']" />
+            <x-record-toolbar class="mt-3" :filter="$userStatus" :sort="$recordSort" :filters="['all' => 'All Accounts', 'active' => 'Active', 'suspended' => 'Suspended']" search-model="search" filter-model="userStatus" placeholder="Search by name or email..." search-label="Search users" label="User directory controls" />
             <div class="mt-4 overflow-hidden overflow-x-auto rounded-xl border border-slate-200">
                 <table class="min-w-full divide-y divide-slate-200 text-sm">
                     <thead class="border-b-2 border-indigo-100 bg-indigo-50">

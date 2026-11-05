@@ -1,9 +1,11 @@
-<div class="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
+<div>
+    <x-page-header title="Messages" subtitle="Your conversation about this listing." />
+    <div class="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
     <a href="{{ route('messages.index') }}" wire:navigate class="flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700">
         <x-icon name="chevron-down" class="h-3.5 w-3.5 rotate-90" /> Back to messages
     </a>
 
-    <h1 class="mt-3 text-xl font-semibold text-slate-900">Chat with {{ $otherParty->name }}</h1>
+    <h2 class="mt-3 text-xl font-semibold text-slate-900">Chat with {{ $otherParty->name }}</h2>
     <p class="mt-1 text-sm text-slate-500">About: {{ $conversation->listing->name }}</p>
 
     <div class="mt-6 flex h-96 flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -32,5 +34,6 @@
         @else
             <p class="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-500">This member is unavailable. You can still read your conversation history.</p>
         @endif
+    </div>
     </div>
 </div>

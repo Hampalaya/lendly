@@ -214,8 +214,8 @@ class Index extends Component
             ->whereHas('listing', fn ($query) => $query->where('owner_id', auth()->id()))
             ->when($this->filter !== 'all', fn ($query) => $query->where('status', $this->filter))
             ->with(['listing.images', 'renter', 'rental'])
-            ->orderBy('created_at', $this->filter === 'requested' ? 'asc' : 'desc')
-            ->orderBy('id', $this->filter === 'requested' ? 'asc' : 'desc'), ['id'], ['listing' => ['name'], 'renter' => ['name', 'email']])->paginate(10);
+            ->orderByDesc('created_at')
+            ->orderByDesc('id'), ['id'], ['listing' => ['name'], 'renter' => ['name', 'email']])->paginate(10);
 
         $approvalRequest = $this->approving ? RentalRequest::with(['listing', 'renter'])->findOrFail($this->approving) : null;
         if ($approvalRequest) {

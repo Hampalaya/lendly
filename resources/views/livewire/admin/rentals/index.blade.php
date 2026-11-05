@@ -1,86 +1,57 @@
 <div wire:poll.5s.keep-alive x-data="{ previousBodyOverflow: '' }">
     <x-page-header eyebrow="Administration" title="Transactions" subtitle="All rental bookings on the platform, across every owner and renter." />
 
-    <div class="w-full px-4 py-8 sm:px-6 lg:px-8">
-        <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <div class="relative w-full sm:min-w-64 sm:flex-1">
-                <label for="transaction-search" class="sr-only">Search transactions</label>
-                <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-                <input id="transaction-search" type="text" wire:model.live.debounce.400ms="search" placeholder="Search item, owner, or renter..."
-                       class="min-h-11 w-full rounded-lg border-slate-300 pl-9 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
-            </div>
+    <div class="px-4 pt-3 sm:px-6 lg:px-8">
+        <x-record-toolbar
+            :filter="$status"
+            :sort="$recordSort"
+            :filters="['' => 'All Statuses'] + collect($statuses)->mapWithKeys(fn ($option) => [$option->value => $option->label()])->all()"
+            search-model="search"
+            filter-model="status"
+            placeholder="Search transactions..."
+            search-label="Search transactions"
+            label="Transaction controls"
+        />
+    </div>
 
-            <div class="w-full sm:w-44">
-                <label for="transaction-status" class="sr-only">Filter by transaction status</label>
-                <select id="transaction-status" wire:model.live="status" class="min-h-11 w-full rounded-lg border-slate-300 bg-white text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    <option value="">All statuses</option>
-                    @foreach ($statuses as $option)
-                        <option value="{{ $option->value }}">{{ $option->label() }}</option>
-                    @endforeach
-                </select>
+    <div class="w-full px-4 pb-6 pt-3 sm:px-6 lg:px-8">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex w-full max-w-sm items-center gap-3 rounded-xl border border-slate-200 border-l-4 border-l-indigo-600 bg-white p-4 shadow-sm">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+                    <x-icon name="archive" class="h-5 w-5" />
+                </span>
+                <div>
+                    <p class="text-xs font-medium text-slate-500">Total transaction value (paid, matching filters)</p>
+                    <p class="mt-0.5 text-lg font-bold text-slate-900">&#8369;{{ number_format($totalTransactionValue, 2) }}</p>
+                </div>
             </div>
-
-            <label class="text-xs font-semibold text-slate-600">Sort records
-                <select aria-label="Sort records" wire:model.live="recordSort" class="mt-1 min-h-11 rounded-lg border-slate-300 text-sm"><option value="default">Default order</option><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select>
-            </label>
-            <button type="button" aria-haspopup="dialog" aria-controls="offline-payment-modal" x-on:click="previousBodyOverflow = document.body.style.overflow; $refs.offlinePaymentModal.showModal(); document.body.style.overflow = 'hidden'" class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:border-blue-500 hover:bg-blue-100 focus:outline-none focus:ring-4 focus:ring-blue-100 sm:w-auto">
+            <button type="button" aria-haspopup="dialog" aria-controls="offline-payment-modal" x-on:click="previousBodyOverflow = document.body.style.overflow; $refs.offlinePaymentModal.showModal(); document.body.style.overflow = 'hidden'" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:border-blue-500 hover:bg-blue-100 focus:outline-none focus:ring-4 focus:ring-blue-100">
                 <x-icon name="cog" class="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span>Configure offline payment instructions</span>
             </button>
         </div>
 
-        <div class="mt-4 flex w-full max-w-sm items-center gap-3 rounded-xl border border-slate-200 border-l-4 border-l-indigo-600 bg-white p-4 shadow-sm">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-                <x-icon name="archive" class="h-5 w-5" />
-            </span>
-            <div>
-                <p class="text-xs font-medium text-slate-400">Total transaction value (paid, matching filters)</p>
-                <p class="mt-0.5 text-lg font-bold text-slate-900">₱{{ number_format($totalTransactionValue, 2) }}</p>
+        @if ($rentals->isEmpty())
+            <x-empty-state title="No transactions found" message="Try a different search term or status filter." />
+        @else
+            <div class="record-list">
+                @foreach ($rentals as $rental)
+                    <x-record-row :listing="$rental->listing" wire:key="rental-{{ $rental->id }}">
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <h2 class="text-sm font-semibold text-slate-800">{{ $rental->listing->name }}</h2>
+                            <x-badge :color="$rental->displayStatusColor()">{{ $rental->displayStatusLabel() }}</x-badge>
+                        </div>
+                        <p class="mt-0.5 text-xs text-slate-500"><x-rental-period :booking="$rental" /></p>
+                        <p class="mt-0.5 text-xs text-slate-500">Owner: {{ $rental->owner->name }} &middot; Renter: {{ $rental->renter->name }} &middot; Total &#8369;{{ number_format($rental->total_amount, 2) }}</p>
+
+                        <x-slot:actions>
+                            <x-record-action :href="route('admin.rentals.show', $rental)" icon="search" label="View Transaction" wire:navigate />
+                        </x-slot:actions>
+                    </x-record-row>
+                @endforeach
             </div>
-        </div>
-
-        <div class="mt-6">
-            @if ($rentals->isEmpty())
-                <x-empty-state title="No transactions found" message="Try a different search term or status filter." />
-            @else
-                <div class="overflow-hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <table class="min-w-full divide-y divide-slate-200 text-sm">
-                        <thead class="border-b-2 border-indigo-100 bg-indigo-50">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-indigo-700">Item</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-indigo-700">Owner</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-indigo-700">Renter</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-indigo-700">Dates</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-indigo-700">Total</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-indigo-700">Status</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-indigo-700">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            @foreach ($rentals as $rental)
-                                <tr wire:key="rental-{{ $rental->id }}" class="hover:bg-slate-50/75">
-                                    <td class="px-4 py-3 font-medium text-slate-800">{{ $rental->listing->name }}</td>
-                                    <td class="px-4 py-3 text-slate-500">{{ $rental->owner->name }}</td>
-                                    <td class="px-4 py-3 text-slate-500">{{ $rental->renter->name }}</td>
-                                    <td class="px-4 py-3 text-slate-500"><x-rental-period :booking="$rental" /></td>
-                                    <td class="px-4 py-3 font-medium text-slate-800">₱{{ number_format($rental->total_amount, 2) }}</td>
-                                    <td class="px-4 py-3">
-                                        <x-badge :color="$rental->displayStatusColor()">{{ $rental->displayStatusLabel() }}</x-badge>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <a href="{{ route('admin.rentals.show', $rental) }}" wire:navigate class="inline-flex min-h-10 items-center rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700">View transaction</a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="mt-6">
-                    {{ $rentals->links() }}
-                </div>
-            @endif
-        </div>
+            <div class="mt-4">{{ $rentals->links() }}</div>
+        @endif
     </div>
 
     <dialog

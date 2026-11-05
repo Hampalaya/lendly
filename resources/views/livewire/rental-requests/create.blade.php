@@ -1,4 +1,8 @@
-<div x-data @if ($modal) x-on:rental-dates-selected.window="$wire.$set('rental_unit', $event.detail.rentalUnit ?? 'day', false); $wire.$set('start_date', $event.detail.startDate, false); $wire.$set('accept_terms', false, false); $wire.$set('end_date', $event.detail.endDate)" @endif class="mx-auto max-w-3xl px-4 py-6 sm:px-6 {{ $modal ? '' : 'lg:px-8 lg:py-8' }}">
+<div>
+    @unless ($modal)
+        <x-page-header eyebrow="Renting" title="Request to rent" :subtitle="$listing->name" />
+    @endunless
+    <div x-data @if ($modal) x-on:rental-dates-selected.window="$wire.$set('rental_unit', $event.detail.rentalUnit ?? 'day', false); $wire.$set('start_date', $event.detail.startDate, false); $wire.$set('accept_terms', false, false); $wire.$set('end_date', $event.detail.endDate)" @endif class="mx-auto max-w-3xl px-4 py-6 sm:px-6 {{ $modal ? '' : 'lg:px-8 lg:py-8' }}">
     @unless ($modal)
         <a href="{{ route('listings.show', $listing) }}" wire:navigate class="flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700">
             <x-icon name="chevron-down" class="h-3.5 w-3.5 rotate-90" /> Back to listing
@@ -7,7 +11,11 @@
 
     <div class="flex items-start justify-between gap-4 {{ $modal ? '' : 'mt-3' }}">
         <div>
-            <h1 id="rental-request-title" class="text-xl font-semibold text-slate-900">Request to rent</h1>
+            @if ($modal)
+                <h1 id="rental-request-title" class="text-xl font-semibold text-slate-900">Request to rent</h1>
+            @else
+                <h2 id="rental-request-title" class="text-xl font-semibold text-slate-900">Rental details</h2>
+            @endif
             <p id="rental-request-description" class="mt-1 text-sm text-slate-500">{{ $listing->name }} &middot; ₱{{ number_format($listing->allows_daily_rentals ? $listing->price_per_day : $listing->price_per_hour, 2) }}/{{ $listing->allows_daily_rentals ? 'day' : 'hour' }}</p>
         </div>
         @if ($modal)
@@ -124,4 +132,5 @@
             <x-primary-button :disabled="! auth()->user()?->fresh()?->hasVerifiedIdentity() || ! $ownerIdentityApproved" :aria-describedby="$ownerIdentityApproved ? null : 'rental-owner-verification-notice'" wire:loading.attr="disabled" wire:loading.class="cursor-wait" wire:loading.class.remove="disabled:cursor-not-allowed" wire:target="submit,addToCart" class="disabled:cursor-not-allowed disabled:opacity-60">Send rental request</x-primary-button>
         </div>
     </form>
+    </div>
 </div>

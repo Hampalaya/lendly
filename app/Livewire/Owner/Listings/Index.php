@@ -84,7 +84,8 @@ class Index extends Component
             ->when($this->filter !== 'all', fn ($query) => $query->where('status', $this->filter))
             ->withAvailability()
             ->with(['category', 'images', 'paidReservations', 'rentalRequests' => fn ($query) => $query->whereIn('status', ['awaiting_agreement', 'approved'])->where('end_date', '>=', now('Asia/Manila')->toDateString())->whereDoesntHave('rental', fn ($rental) => $rental->whereIn('status', ['completed', 'returned', 'cancelled']))])
-            ->orderByDesc('created_at'), ['name', 'brand', 'location'], ['category' => ['name']])->paginate(10);
+            ->orderByDesc('created_at')
+            ->orderByDesc('id'), ['name', 'brand', 'location'], ['category' => ['name']])->paginate(10);
 
         return view('livewire.owner.listings.index', ['listings' => $listings]);
     }

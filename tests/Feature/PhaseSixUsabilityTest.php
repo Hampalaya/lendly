@@ -102,24 +102,35 @@ class PhaseSixUsabilityTest extends TestCase
 
     public function test_listing_search_filter_and_sort_work_together_and_reset_pagination(): void
     {
+        $this->freezeTime();
         $owner = User::factory()->create();
         $first = $this->listing($owner, 'Camera one');
         $second = $this->listing($owner, 'Camera two');
         $second->update(['status' => 'inactive']);
-        Livewire::actingAs($owner)->test(Listings::class)->set('recordSearch', 'Camera')->set('recordSort', 'oldest')
+        Livewire::actingAs($owner)->test(Listings::class)->set('recordSearch', 'Camera')
+            ->assertViewHas('listings', fn ($rows) => $rows->pluck('id')->all() === [$second->id, $first->id])
+            ->call('toggleRecordSort')->assertSet('recordSort', 'oldest')
             ->assertViewHas('listings', fn ($rows) => $rows->pluck('id')->all() === [$first->id, $second->id])
             ->set('filter', 'inactive')->assertViewHas('listings', fn ($rows) => $rows->pluck('id')->all() === [$second->id])
+            ->call('setPage', 2)->call('toggleRecordSort')->assertSet('recordSort', 'newest')->assertSet('paginators.page', 1)
+            ->assertViewHas('listings', fn ($rows) => $rows->pluck('id')->all() === [$second->id])
             ->call('setPage', 2)->set('recordSearch', 'two')->assertSet('paginators.page', 1);
     }
 
     public function test_renter_requests_honor_link_filters_and_cannot_search_other_renters_records(): void
     {
+        $this->freezeTime();
         $member = User::factory()->create();
         $listing = $this->listing(User::factory()->create());
         $own = $this->request($listing, $member, 'awaiting_agreement');
+        $recent = $this->request($listing, $member, 'awaiting_agreement');
         $this->request($listing, User::factory()->create());
         Livewire::actingAs($member)->test(Requests::class)->set('filter', 'awaiting_agreement')->set('recordSearch', 'Camera')
-            ->assertViewHas('rentalRequests', fn ($rows) => $rows->pluck('id')->all() === [$own->id])
+            ->assertViewHas('rentalRequests', fn ($rows) => $rows->pluck('id')->all() === [$recent->id, $own->id])
+            ->call('setPage', 2)->call('toggleRecordSort')->assertSet('recordSort', 'oldest')->assertSet('paginators.page', 1)
+            ->assertViewHas('rentalRequests', fn ($rows) => $rows->pluck('id')->all() === [$own->id, $recent->id])
+            ->call('toggleRecordSort')->assertSet('recordSort', 'newest')
+            ->assertViewHas('rentalRequests', fn ($rows) => $rows->pluck('id')->all() === [$recent->id, $own->id])
             ->set('filter', 'requested')->assertViewHas('rentalRequests', fn ($rows) => $rows->isEmpty());
     }
 

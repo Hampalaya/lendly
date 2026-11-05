@@ -164,6 +164,6 @@ class AdminTransactionDetailTest extends TestCase
         $rental = $this->booking();
 
         $this->actingAs(User::factory()->admin()->create())->get(route('admin.rentals.index'))
-            ->assertOk()->assertSee(route('admin.rentals.show', $rental))->assertSee('View transaction');
+            ->assertOk()->assertSee(route('admin.rentals.show', $rental))->assertSee('View Transaction');
     }
 }

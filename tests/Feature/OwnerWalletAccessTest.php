@@ -37,6 +37,19 @@ class OwnerWalletAccessTest extends TestCase
             ->assertHeader('Content-Type', 'image/png')->assertHeader('X-Content-Type-Options', 'nosniff');
     }
 
+    public function test_each_saved_wallet_preview_is_scoped_to_its_owner(): void
+    {
+        Storage::fake('local');
+        $owner = User::factory()->create();
+        foreach (['maya', 'gcash', 'palawanpay'] as $provider) {
+            $wallet = OwnerPaymentSetting::create(['user_id' => $owner->id, 'provider' => $provider,
+                'account_name' => 'Sample recipient', 'qr_path' => $this->paymentProof()->store('wallets', 'local'), 'enabled' => true]);
+            $url = route('owner.payments.qr', ['wallet' => $wallet->id]);
+            $this->actingAs($owner)->get($url)->assertOk()->assertHeader('Content-Type', 'image/png');
+            $this->actingAs(User::factory()->create())->get($url)->assertNotFound();
+        }
+    }
+
     public function test_only_booking_participants_and_active_admins_can_view_its_snapshotted_qr(): void
     {
         Storage::fake('local');
@@ -114,6 +127,9 @@ class OwnerWalletAccessTest extends TestCase
             $path = $this->paymentProof()->store('owner-payment-qrs', 'local');
             OwnerPaymentSetting::create(['user_id' => $rental->owner_id, 'provider' => 'maya',
                 'account_name' => 'Private wallet name', 'qr_path' => $path, 'enabled' => true]);
+            $extraPath = $this->paymentProof()->store('owner-payment-qrs', 'local');
+            OwnerPaymentSetting::create(['user_id' => $rental->owner_id, 'provider' => 'gcash',
+                'account_name' => 'Second wallet', 'qr_path' => $extraPath, 'enabled' => true]);
             if ($referenced) {
                 $rental->forceFill(['payment_destination' => ['source' => 'owner_wallet', 'method' => 'maya',
                     'payee_user_id' => $rental->owner_id, 'account_name' => 'Private wallet name', 'qr_path' => $path]])->save();
@@ -122,6 +138,8 @@ class OwnerWalletAccessTest extends TestCase
             $rental->owner->delete();
 
             $this->assertNull(OwnerPaymentSetting::currentFor($rental->owner_id));
+            $this->assertSame(0, OwnerPaymentSetting::where('user_id', $rental->owner_id)->count());
+            Storage::disk('local')->assertMissing($extraPath);
             $this->assertSame($referenced, Storage::disk('local')->exists($path));
             if ($referenced) {
                 $this->actingAs($rental->renter)->get(route('rentals.payment-qr', $rental))->assertOk();

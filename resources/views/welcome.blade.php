@@ -15,36 +15,14 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-white font-sans text-slate-950 antialiased">
-        <header class="sticky top-0 z-50 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
-            <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                <a href="/" class="group flex items-center gap-3" aria-label="Lendly home">
-                    <span class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgba(15,52,96,0.09)] ring-1 ring-slate-200 transition duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[0_12px_34px_rgba(37,99,235,0.16)]">
-                        <img src="{{ asset('images/lendlylogo.png') }}" alt="Lendly logo" class="h-full w-full object-contain" />
-                    </span>
-                    <span>
-                        <span class="block text-xl font-extrabold leading-none tracking-[-0.03em] text-[#06275f]">Lendly</span>
-                        <span class="mt-1 block text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-500">Rent · Share · Earn</span>
-                    </span>
-                </a>
-
-                <nav class="flex items-center gap-2 sm:gap-3" aria-label="Primary navigation">
-                    <a href="{{ route('listings.index') }}" class="hidden rounded-full px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 sm:inline-flex">Browse items</a>
-                    @auth
-                        <a href="{{ route(auth()->user()->dashboardRouteName()) }}" class="rounded-full bg-[#075cf5] px-5 py-2.5 text-sm font-bold text-white shadow-[0_8px_22px_rgba(7,92,245,0.25)] transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_12px_28px_rgba(7,92,245,0.32)]">Go to dashboard</a>
-                    @else
-                        <a href="{{ route('login') }}" class="rounded-full px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 sm:px-4">Log in</a>
-                        <a href="{{ route('register') }}" class="rounded-full bg-[#075cf5] px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_22px_rgba(7,92,245,0.25)] transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-[0_12px_28px_rgba(7,92,245,0.32)] sm:px-5">Get started</a>
-                    @endauth
-                </nav>
-            </div>
-        </header>
-
         <main class="overflow-hidden">
             <section class="relative isolate min-h-[calc(100vh-5rem)] overflow-hidden bg-[#f8fbff]">
                 <div class="pointer-events-none absolute inset-0 -z-20 bg-[radial-gradient(circle_at_12%_18%,rgba(147,197,253,0.24),transparent_30%),linear-gradient(135deg,#ffffff_0%,#f8fbff_48%,#edf6ff_100%)]"></div>
                 <div class="pointer-events-none absolute -bottom-72 -right-48 -z-10 h-[44rem] w-[44rem] rounded-full bg-gradient-to-br from-sky-300/55 via-blue-500/45 to-blue-800/65 blur-3xl"></div>
                 <div class="pointer-events-none absolute bottom-0 right-0 -z-10 h-3/5 w-3/5 bg-[radial-gradient(ellipse_at_bottom_right,rgba(29,78,216,0.28),transparent_66%)]"></div>
                 <div class="pointer-events-none absolute left-[42%] top-24 -z-10 h-24 w-24 rounded-full border border-blue-200/60"></div>
+
+                <x-public-header />
 
                 <div class="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-14 px-4 py-14 sm:px-6 lg:grid-cols-[0.94fr_1.06fr] lg:gap-16 lg:px-8 lg:py-20">
                     <div class="relative z-10 max-w-2xl">

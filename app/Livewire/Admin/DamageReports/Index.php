@@ -29,7 +29,7 @@ class Index extends Component
         abort_unless($admin && $admin->isAdmin() && ! $admin->isSuspended() && $admin->hasVerifiedEmail(), 403);
         $damageReports = $this->filterRecords(DamageReport::query()
             ->when($this->filter !== 'all', fn ($query) => $query->where('status', $this->filter))
-            ->with(['rental.listing', 'rental.owner', 'rental.renter', 'photos'])
+            ->with(['rental.listing.images', 'rental.owner', 'rental.renter', 'photos'])
             ->orderByDesc('created_at'), ['description', 'damage_type'], ['rental.listing' => ['name'], 'rental.owner' => ['name'], 'rental.renter' => ['name']])->paginate(10);
 
         return view('livewire.admin.damage-reports.index', ['damageReports' => $damageReports]);

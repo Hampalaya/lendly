@@ -10,12 +10,16 @@ use Illuminate\Support\Facades\Storage;
 
 class OwnerPaymentQrController extends Controller
 {
-    public function current()
+    public function current(?int $wallet = null)
     {
         $user = $this->viewer();
         abort_if($user->isAdmin(), 403);
 
-        return $this->image(OwnerPaymentSetting::currentFor($user->id)?->qr_path);
+        $settings = $wallet === null
+            ? OwnerPaymentSetting::currentFor($user->id)
+            : OwnerPaymentSetting::where('user_id', $user->id)->findOrFail($wallet);
+
+        return $this->image($settings?->qr_path);
     }
 
     public function booking(Rental $rental)

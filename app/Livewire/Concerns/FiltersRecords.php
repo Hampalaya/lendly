@@ -20,6 +20,17 @@ trait FiltersRecords
         $this->resetPage();
     }
 
+    public function toggleRecordSort(): void
+    {
+        $this->recordSort = $this->effectiveRecordSort() === 'oldest' ? 'newest' : 'oldest';
+        $this->resetPage();
+    }
+
+    protected function effectiveRecordSort(): string
+    {
+        return $this->recordSort === 'oldest' ? 'oldest' : 'newest';
+    }
+
     protected function filterRecords(Builder $query, array $columns = [], array $relations = []): Builder
     {
         $search = mb_substr(trim($this->recordSearch), 0, 120);

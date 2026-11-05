@@ -89,8 +89,8 @@ class TermsAcceptanceTest extends TestCase
         $this->assertNull($request->owner_terms_accepted_at);
         $this->assertNotNull($request->agreement_terms);
         $this->assertSame(0, Rental::count());
-        Livewire::actingAs($owner)->test(OwnerRequests::class)->set('filter', 'awaiting_agreement')->assertSee('Review rental agreement');
-        Livewire::actingAs($renter)->test(RenterRequests::class)->assertSee('Review rental agreement');
+        Livewire::actingAs($owner)->test(OwnerRequests::class)->set('filter', 'awaiting_agreement')->assertSee('Review Rental Agreement');
+        Livewire::actingAs($renter)->test(RenterRequests::class)->assertSee('Review Rental Agreement');
     }
 
     public function test_both_parties_must_explicitly_check_the_acceptance_box(): void

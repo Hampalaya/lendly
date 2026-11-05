@@ -14,21 +14,16 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-[#f8fbff] font-sans text-slate-950 antialiased">
-        <main class="relative min-h-screen overflow-hidden lg:grid lg:grid-cols-[1.02fr_0.98fr]">
-            <section class="relative hidden min-h-screen overflow-hidden bg-[linear-gradient(145deg,#061634_0%,#0a2d67_54%,#126fd9_100%)] px-10 py-9 text-white lg:flex lg:flex-col xl:px-16">
-                <div class="pointer-events-none absolute -bottom-52 -right-36 h-[40rem] w-[40rem] rounded-full bg-[radial-gradient(circle,rgba(125,211,252,0.55)_0%,rgba(37,99,235,0.34)_42%,transparent_72%)] blur-3xl"></div>
-                <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,0.04),transparent_38%,rgba(56,189,248,0.08))]"></div>
-                <div class="pointer-events-none absolute -left-4 -top-8 h-44 w-80 rounded-full bg-[radial-gradient(ellipse,rgba(255,255,255,0.96)_0%,rgba(186,230,253,0.68)_38%,rgba(59,130,246,0.18)_64%,transparent_76%)] blur-lg"></div>
-                <div class="pointer-events-none absolute left-[12%] top-[24%] h-24 w-24 rounded-full border border-blue-300/20"></div>
-
+        <main class="relative min-h-dvh overflow-hidden lg:grid lg:grid-cols-[1.02fr_0.98fr]">
+            <section class="auth-poster relative hidden gap-8 overflow-hidden px-10 py-9 text-white lg:flex lg:flex-col xl:px-16">
                 <a href="/" wire:navigate class="relative z-10 inline-flex w-fit items-center transition duration-300 hover:-translate-y-0.5 hover:scale-[1.03]" aria-label="Return to Lendly home">
-                    <img src="{{ asset('images/lendlylogo_transparent.png') }}" alt="Lendly" class="h-24 w-auto object-contain drop-shadow-[0_8px_18px_rgba(7,26,61,0.28)]" />
+                    <img src="{{ asset('images/lendlylogo_transparent.png') }}" alt="Lendly" class="h-24 w-auto object-contain" />
                 </a>
 
                 <div class="relative z-10 my-auto grid items-center gap-8 xl:grid-cols-[0.9fr_1.1fr] xl:gap-10">
                     <div>
-                        <p class="inline-flex whitespace-nowrap items-center gap-2 rounded-full border border-blue-300/25 bg-white/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-sky-200 backdrop-blur">
-                            <span class="h-2 w-2 rounded-full bg-sky-300 shadow-[0_0_12px_rgba(125,211,252,0.9)]"></span>
+                        <p class="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/95 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-900">
+                            <span class="h-2 w-2 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
                             Your neighborhood marketplace
                         </p>
                         <h1 class="mt-6 text-4xl font-extrabold leading-[1.03] tracking-[-0.045em] xl:text-5xl">
@@ -63,7 +58,7 @@
                 <p class="relative z-10 text-xs text-blue-200/55">© {{ date('Y') }} Lendly · Rent smarter, together.</p>
             </section>
 
-            <section class="relative flex min-h-screen items-center justify-center px-4 py-8 sm:px-8 lg:px-10 xl:px-16">
+            <section class="relative flex min-h-dvh items-center justify-center px-4 py-8 sm:px-8 lg:px-10 xl:px-16">
                 <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_90%_100%,rgba(59,130,246,0.16),transparent_36%),radial-gradient(circle_at_12%_8%,rgba(186,230,253,0.35),transparent_27%)]"></div>
 
                 <div class="relative z-10 w-full {{ request()->routeIs('register') ? 'max-w-2xl' : 'max-w-md' }}">

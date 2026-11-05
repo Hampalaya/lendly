@@ -101,23 +101,45 @@ class RentalHistoryTest extends TestCase
 
     public function test_history_includes_every_rental_status_for_both_parties(): void
     {
+        $this->freezeTime();
         $owner = User::factory()->create();
         $renter = User::factory()->create();
         $listing = $this->listingFor($owner);
+        $rentalIds = [];
 
         foreach (RentalStatus::cases() as $status) {
-            $this->rentalWithStatus($owner, $renter, $listing, $status,
+            $rentalIds[] = $this->rentalWithStatus($owner, $renter, $listing, $status,
                 $status === RentalStatus::Overdue ? now()->subDays(5) : now()->addDays(5),
-                $status === RentalStatus::Overdue ? now()->subDays(2) : now()->addDays(8));
+                $status === RentalStatus::Overdue ? now()->subDays(2) : now()->addDays(8))->id;
         }
 
         $renterView = Livewire::actingAs($renter)->test(RenterRentalsIndex::class);
         $this->assertSame(count(RentalStatus::cases()), $renterView->viewData('rentals')->total());
         $this->assertEqualsCanonicalizing(RentalStatus::cases(), $renterView->viewData('rentals')->getCollection()->pluck('status')->all());
+        $renterView
+            ->assertViewHas('rentals', fn ($rows) => $rows->pluck('id')->all() === array_reverse($rentalIds))
+            ->call('setPage', 2)
+            ->call('toggleRecordSort')
+            ->assertSet('recordSort', 'oldest')
+            ->assertSet('paginators.page', 1)
+            ->assertViewHas('rentals', fn ($rows) => $rows->pluck('id')->all() === $rentalIds)
+            ->call('toggleRecordSort')
+            ->assertSet('recordSort', 'newest')
+            ->assertViewHas('rentals', fn ($rows) => $rows->pluck('id')->all() === array_reverse($rentalIds));
 
         $ownerView = Livewire::actingAs($owner)->test(OwnerRentalsIndex::class);
         $this->assertSame(count(RentalStatus::cases()), $ownerView->viewData('rentals')->total());
         $this->assertEqualsCanonicalizing(RentalStatus::cases(), $ownerView->viewData('rentals')->getCollection()->pluck('status')->all());
+        $ownerView
+            ->assertViewHas('rentals', fn ($rows) => $rows->pluck('id')->all() === array_reverse($rentalIds))
+            ->call('setPage', 2)
+            ->call('toggleRecordSort')
+            ->assertSet('recordSort', 'oldest')
+            ->assertSet('paginators.page', 1)
+            ->assertViewHas('rentals', fn ($rows) => $rows->pluck('id')->all() === $rentalIds)
+            ->call('toggleRecordSort')
+            ->assertSet('recordSort', 'newest')
+            ->assertViewHas('rentals', fn ($rows) => $rows->pluck('id')->all() === array_reverse($rentalIds));
         $ownerView->set('filter', 'completed');
         $this->assertSame(1, $ownerView->viewData('rentals')->total());
         $this->assertSame(RentalStatus::Completed, $ownerView->viewData('rentals')->first()->status);

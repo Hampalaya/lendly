@@ -10,6 +10,7 @@ use App\Models\PaymentSubmission;
 use App\Models\Rental;
 use App\Models\RentalRequest;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -104,15 +105,17 @@ class OwnerWalletSettingsTest extends TestCase
         Livewire::actingAs($owner)->test(Settings::class)->set('user_id', $other->user_id);
     }
 
-    public function test_mount_uses_own_fields_and_render_reloads_the_current_server_record(): void
+    public function test_form_starts_closed_and_edit_reloads_only_the_selected_wallet(): void
     {
         $owner = User::factory()->create();
         $settings = $this->savedSettings($owner);
         $component = Livewire::actingAs($owner)->test(Settings::class)
+            ->assertSet('showForm', false)->assertSet('editingId', null)
+            ->call('edit', $settings->id)->assertSet('showForm', true)
             ->assertSet('account_name', 'Original payee')->assertSet('enabled', true)
             ->assertDontSee($settings->qr_path);
         $settings->update(['account_name' => 'Updated in another tab']);
-        $component->call('$refresh')->assertViewHas('settings', fn ($current) => $current->account_name === 'Updated in another tab');
+        $component->call('$refresh')->assertViewHas('wallets', fn ($wallets) => $wallets->find($settings->id)->account_name === 'Updated in another tab');
     }
 
     public function test_ineligible_accounts_cannot_mount_or_mutate_wallet_settings(): void
@@ -132,7 +135,7 @@ class OwnerWalletSettingsTest extends TestCase
                     'deleted' => $owner->delete(),
                     'admin' => $owner->update(['role' => 'admin']),
                 };
-                $component->call($action)->assertForbidden();
+                $component->call($action, ...($action === 'removeQr' ? [$settings->id] : []))->assertForbidden();
                 if ($change === 'deleted') {
                     $this->assertNull($settings->fresh());
                     Storage::disk('local')->assertMissing($settings->qr_path);
@@ -170,7 +173,8 @@ class OwnerWalletSettingsTest extends TestCase
         $component->set('provider', 'maya')->set('account_name', 'Synthetic owner')->set('instructions', '')
             ->set('enabled', true)->call('save')->assertHasErrors('qr_image');
         $this->assertDatabaseCount('owner_payment_settings', 0);
-        $component->set('enabled', false)->call('save')->assertHasNoErrors();
+        $component->set('enabled', false)->call('save')->assertHasErrors('qr_image');
+        $component->set('qr_image', $this->qrImage())->call('save')->assertHasNoErrors();
         $this->assertFalse(OwnerPaymentSetting::currentFor($owner->id)->enabled);
     }
 
@@ -179,23 +183,25 @@ class OwnerWalletSettingsTest extends TestCase
         $owner = User::factory()->create();
         $settings = $this->savedSettings($owner);
         $oldPath = $settings->qr_path;
-        Livewire::actingAs($owner)->test(Settings::class)->set('qr_image', $this->qrImage())->call('save')->assertHasNoErrors();
+        Livewire::actingAs($owner)->test(Settings::class)->call('edit', $settings->id)
+            ->set('qr_image', $this->qrImage())->call('save')->assertHasNoErrors();
         $newPath = $settings->fresh()->qr_path;
         $this->assertNotSame($oldPath, $newPath);
         Storage::disk('local')->assertExists($newPath);
         Storage::disk('local')->assertMissing($oldPath);
     }
 
-    public function test_removing_qr_disables_new_wallet_instructions_and_keeps_payee_details(): void
+    public function test_removing_wallet_deletes_only_that_saved_wallet_and_its_unreferenced_image(): void
     {
         $owner = User::factory()->create();
         $settings = $this->savedSettings($owner);
         $oldPath = $settings->qr_path;
-        Livewire::actingAs($owner)->test(Settings::class)->call('removeQr')->assertHasNoErrors()->assertSet('enabled', false);
-        $settings->refresh();
-        $this->assertNull($settings->qr_path);
-        $this->assertFalse($settings->enabled);
-        $this->assertSame('Original payee', $settings->account_name);
+        $other = $this->savedSettings($owner, 'owner-payment-qr/second.png');
+        Livewire::actingAs($owner)->test(Settings::class)->call('edit', $settings->id)
+            ->call('removeQr', $settings->id)->assertHasNoErrors()->assertSet('showForm', false);
+        $this->assertNull($settings->fresh());
+        $this->assertNotNull($other->fresh());
+        Storage::disk('local')->assertExists($other->qr_path);
         Storage::disk('local')->assertMissing($oldPath);
     }
 
@@ -217,14 +223,15 @@ class OwnerWalletSettingsTest extends TestCase
                 ]);
                 DB::table('payment_submissions')->where('id', $submission->id)->update(['payment_destination' => json_encode($destination)]);
             }
-            Livewire::actingAs($owner)->test(Settings::class)->set('qr_image', $this->qrImage())->call('save')->assertHasNoErrors();
+            Livewire::actingAs($owner)->test(Settings::class)->call('edit', $settings->id)
+                ->set('qr_image', $this->qrImage())->call('save')->assertHasNoErrors();
             Storage::disk('local')->assertExists($oldPath);
 
             // Restore a historical path to exercise removal's independent cleanup boundary.
             $settings->refresh()->update(['qr_path' => $oldPath]);
-            Livewire::actingAs($owner)->test(Settings::class)->call('removeQr')->assertHasNoErrors();
+            Livewire::actingAs($owner)->test(Settings::class)->call('removeQr', $settings->id)->assertHasNoErrors();
             Storage::disk('local')->assertExists($oldPath);
-            $this->assertNull($settings->fresh()->qr_path);
+            $this->assertNull($settings->fresh());
         }
     }
 
@@ -232,7 +239,7 @@ class OwnerWalletSettingsTest extends TestCase
     {
         $owner = User::factory()->create();
         $settings = $this->savedSettings($owner);
-        $component = Livewire::actingAs($owner)->test(Settings::class)->set('qr_image', $this->qrImage());
+        $component = Livewire::actingAs($owner)->test(Settings::class)->call('edit', $settings->id)->set('qr_image', $this->qrImage());
         Event::listen('eloquent.saving: '.OwnerPaymentSetting::class, fn () => throw new RuntimeException('Synthetic database failure'));
         try {
             $component->call('save');
@@ -244,5 +251,39 @@ class OwnerWalletSettingsTest extends TestCase
         }
         $this->assertSame($settings->qr_path, $settings->fresh()->qr_path);
         $this->assertSame([$settings->qr_path], Storage::disk('local')->allFiles('owner-payment-qr'));
+    }
+
+    public function test_owners_can_add_multiple_wallets_including_more_than_one_of_the_same_provider(): void
+    {
+        $owner = User::factory()->create();
+        $component = Livewire::actingAs($owner)->test(Settings::class);
+        foreach ([...array_keys(OwnerPaymentSetting::PROVIDERS), 'gcash'] as $index => $provider) {
+            $component->call('addWallet')->assertSet('editingId', null)->assertSet('account_name', '')
+                ->set('provider', $provider)->set('account_name', 'Wallet '.$index)
+                ->set('qr_image', $this->qrImage())->call('save')->assertHasNoErrors()->assertSet('showForm', false);
+        }
+
+        $this->assertSame(8, OwnerPaymentSetting::where('user_id', $owner->id)->count());
+        $this->assertSame(2, OwnerPaymentSetting::where('user_id', $owner->id)->where('provider', 'gcash')->count());
+        $wallet = OwnerPaymentSetting::where('user_id', $owner->id)->latest('id')->first();
+        $component->call('edit', $wallet->id)->set('account_name', 'Updated wallet')->call('save')->assertHasNoErrors();
+        $this->assertSame('Updated wallet', $wallet->fresh()->account_name);
+        $this->assertSame(8, OwnerPaymentSetting::where('user_id', $owner->id)->count());
+    }
+
+    public function test_edit_and_remove_cannot_target_another_owners_wallet(): void
+    {
+        $owner = User::factory()->create();
+        $other = $this->savedSettings(User::factory()->create());
+        foreach (['edit', 'removeQr'] as $action) {
+            try {
+                Livewire::actingAs($owner)->test(Settings::class)->call($action, $other->id);
+                $this->fail('Another owner\'s wallet must not be editable.');
+            } catch (ModelNotFoundException $exception) {
+                $this->assertSame(OwnerPaymentSetting::class, $exception->getModel());
+            }
+            $this->assertNotNull($other->fresh());
+            Storage::disk('local')->assertExists($other->qr_path);
+        }
     }
 }

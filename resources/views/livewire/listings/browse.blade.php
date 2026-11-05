@@ -41,6 +41,7 @@
     },
 }">
     <x-page-header
+        :panel="true"
         eyebrow="Lendly marketplace"
         title="Find what you need to rent"
         :subtitle="$listings->total() . ' item' . ($listings->total() === 1 ? '' : 's') . ' found. Check each item’s availability.'"

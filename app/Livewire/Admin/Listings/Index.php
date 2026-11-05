@@ -89,7 +89,8 @@ class Index extends Component
         $listings = $this->filterRecords(Listing::query()
             ->when($this->filter !== 'all', fn ($query) => $query->where('status', $this->filter))
             ->with(['category', 'owner', 'images'])
-            ->orderByDesc('created_at'), ['name', 'brand', 'location'], ['owner' => ['name', 'email'], 'category' => ['name']])->paginate(10);
+            ->orderByDesc('created_at')
+            ->orderByDesc('id'), ['name', 'brand', 'location'], ['owner' => ['name', 'email'], 'category' => ['name']])->paginate(10);
 
         return view('livewire.admin.listings.index', [
             'listings' => $listings,

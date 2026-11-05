@@ -32,6 +32,19 @@ class Form extends Component
 
     public ?Listing $listing = null;
 
+    #[Locked]
+    public int $step = 1;
+
+    #[Locked]
+    public int $furthestStep = 1;
+
+    private const STEP_FIELDS = [
+        1 => ['category_id', 'subcategory_id', 'other_category', 'other_subcategory', 'name', 'brand', 'model', 'description', 'condition', 'purchase_year', 'estimated_original_price'],
+        2 => ['photos', 'photoBatch'],
+        3 => ['price_per_day', 'price_per_hour', 'price_per_week', 'security_deposit', 'allows_daily_rentals', 'available_time_from', 'available_time_until', 'available_from', 'available_until', 'max_rental_duration_days', 'is_available'],
+        4 => ['location', 'latitude', 'longitude', 'pickup_available', 'delivery_available', 'rental_rules'],
+    ];
+
     public ?int $category_id = null;
 
     public ?int $subcategory_id = null;
@@ -223,7 +236,110 @@ class Form extends Component
         return $this->listing?->images()->whereNotIn('id', $this->removedImageIds)->count() ?? 0;
     }
 
+    protected function publicationRules(): array
+    {
+        return [
+            ...ListingPublication::rules($this->category_id),
+            'category_id' => $this->category_id === 0 ? ['required', 'integer', 'in:0'] : ['required', Rule::exists('categories', 'id')->whereNull('parent_id')],
+            'subcategory_id' => $this->subcategory_id === 0 ? ['nullable', 'integer', 'in:0'] : ['nullable', Rule::exists('categories', 'id')->where('parent_id', $this->category_id)],
+            'other_category' => ['required_if:category_id,0', 'nullable', 'string', 'max:100'],
+            'other_subcategory' => ['required_if:subcategory_id,0', 'nullable', 'string', 'max:100'],
+            'photos' => ['array', 'max:20', 'min:'.($this->existingPhotoCount() > 0 ? 0 : 1)],
+            'photos.*' => ['required', 'image', 'max:4096'],
+        ];
+    }
+
+    protected function validateStep(int $step): void
+    {
+        $this->other_category = Str::squish($this->other_category);
+        $this->other_subcategory = Str::squish($this->other_subcategory);
+        $fields = self::STEP_FIELDS[$step];
+        if ($step === 2) {
+            $fields[] = 'photos.*';
+        }
+        $this->validate(array_intersect_key($this->publicationRules(), array_flip($fields)), ListingPublication::messages());
+
+        if ($step === 2 && $this->existingPhotoCount() + count($this->photos) > 20) {
+            throw ValidationException::withMessages(['photos' => 'Keep up to 20 photos per listing.']);
+        }
+        if ($step === 3 && ! $this->allows_daily_rentals && ! $this->price_per_hour) {
+            throw ValidationException::withMessages(['price_per_hour' => 'Set an hourly rate or allow daily rentals.']);
+        }
+        if ($step === 4 && ! $this->pickup_available && ! $this->delivery_available) {
+            throw ValidationException::withMessages(['pickup_available' => 'Select at least one option: pickup or delivery.']);
+        }
+    }
+
+    protected function showValidationStep(ValidationException $exception): void
+    {
+        $errors = array_map(fn ($field) => explode('.', $field)[0], array_keys($exception->errors()));
+        foreach (self::STEP_FIELDS as $step => $fields) {
+            if (array_intersect($fields, $errors)) {
+                $this->step = $step;
+                break;
+            }
+        }
+        $this->dispatch('listing-step-changed');
+    }
+
+    protected function advanceToStep(int $step): void
+    {
+        try {
+            for ($previous = 1; $previous < $step; $previous++) {
+                $this->validateStep($previous);
+            }
+        } catch (ValidationException $exception) {
+            $this->showValidationStep($exception);
+            throw $exception;
+        }
+        $this->resetValidation();
+        $this->step = $step;
+        $this->furthestStep = max($this->furthestStep, $step);
+        $this->dispatch('listing-step-changed');
+    }
+
+    public function nextStep(): void
+    {
+        if ($this->step < 5) {
+            $this->advanceToStep($this->step + 1);
+        }
+    }
+
+    public function goToStep(int $step): void
+    {
+        if ($step < 1 || $step > $this->furthestStep) {
+            return;
+        }
+        if ($step > $this->step) {
+            $this->advanceToStep($step);
+
+            return;
+        }
+        $this->resetValidation();
+        $this->step = $step;
+        $this->dispatch('listing-step-changed');
+    }
+
+    public function submitStep(): void
+    {
+        if ($this->step < 5) {
+            $this->nextStep();
+        } else {
+            $this->save();
+        }
+    }
+
     public function save(): void
+    {
+        try {
+            $this->persistListing();
+        } catch (ValidationException $exception) {
+            $this->showValidationStep($exception);
+            throw $exception;
+        }
+    }
+
+    protected function persistListing(): void
     {
         ListingPublication::ensureVerifiedOwner(auth()->id());
         $this->other_category = Str::squish($this->other_category);
@@ -233,24 +349,18 @@ class Form extends Component
             $this->authorize('update', $this->listing);
         }
 
-        $validated = $this->validate([
-            ...ListingPublication::rules($this->category_id),
-            'category_id' => $this->category_id === 0 ? ['required', 'integer', 'in:0'] : ['required', Rule::exists('categories', 'id')->whereNull('parent_id')],
-            'subcategory_id' => $this->subcategory_id === 0 ? ['nullable', 'integer', 'in:0'] : ['nullable', Rule::exists('categories', 'id')->where('parent_id', $this->category_id)],
-            'other_category' => ['required_if:category_id,0', 'nullable', 'string', 'max:100'],
-            'other_subcategory' => ['required_if:subcategory_id,0', 'nullable', 'string', 'max:100'],
-            'photos' => ['array', 'max:20', 'min:'.($this->existingPhotoCount() > 0 ? 0 : 1)],
-            'photos.*' => ['required', 'image', 'max:4096'],
-        ], ListingPublication::messages());
+        $validated = $this->validate($this->publicationRules(), ListingPublication::messages());
         unset($validated['photos'], $validated['other_category'], $validated['other_subcategory']);
 
         if (! $this->pickup_available && ! $this->delivery_available) {
+            $this->step = 4;
             $this->addError('pickup_available', 'Select at least one option: pickup or delivery.');
 
             return;
         }
 
         if (! $this->allows_daily_rentals && ! $this->price_per_hour) {
+            $this->step = 3;
             $this->addError('price_per_hour', 'Set an hourly rate or allow daily rentals.');
 
             return;

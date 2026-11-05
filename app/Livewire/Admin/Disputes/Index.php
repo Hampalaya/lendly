@@ -93,7 +93,7 @@ class Index extends Component
         $disputes = $this->filterRecords(Dispute::query()
             ->when(($this->rentalId ?? $this->rental) !== null, fn ($query) => $query->where('rental_id', $this->rentalId ?? $this->rental))
             ->when($this->filter !== 'all', fn ($query) => $query->where('status', $this->filter))
-            ->with(['rental.listing', 'rental.owner', 'rental.renter', 'raisedBy', 'damageReport.photos'])
+            ->with(['rental.listing.images', 'rental.owner', 'rental.renter', 'raisedBy', 'damageReport.photos'])
             ->orderByDesc('created_at'), ['description', 'other_resolution', 'resolution_notes'], ['rental.listing' => ['name'], 'raisedBy' => ['name'], 'rental.owner' => ['name'], 'rental.renter' => ['name']])->paginate(10);
 
         return view('livewire.admin.disputes.index', ['disputes' => $disputes]);

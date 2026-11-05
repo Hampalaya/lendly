@@ -15,7 +15,7 @@ class RentalQueueTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_pending_queue_is_oldest_first_with_id_ties_and_history_stays_newest_first(): void
+    public function test_requests_default_to_newest_first_and_toggle_oldest_first_with_id_ties(): void
     {
         $owner = User::factory()->identityVerified()->create();
         $listing = $this->listing($owner);
@@ -25,9 +25,19 @@ class RentalQueueTest extends TestCase
         $other = $this->request($this->listing(User::factory()->identityVerified()->create()), 'Other owner request', now()->subDay());
 
         Livewire::actingAs($owner)->test(Index::class)
-            ->assertViewHas('rentalRequests', fn ($rows) => $rows->pluck('id')->all() === [$old->id, $tie->id, $new->id])
-            ->assertSee('Oldest first')
+            ->assertViewHas('rentalRequests', fn ($rows) => $rows->pluck('id')->all() === [$new->id, $tie->id, $old->id])
+            ->assertSee('Newest first')
             ->assertDontSee($other->renter->name)
+            ->call('setPage', 2)
+            ->call('toggleRecordSort')
+            ->assertSet('recordSort', 'oldest')
+            ->assertSet('paginators.page', 1)
+            ->assertSee('Oldest first')
+            ->assertViewHas('rentalRequests', fn ($rows) => $rows->pluck('id')->all() === [$old->id, $tie->id, $new->id])
+            ->call('toggleRecordSort')
+            ->assertSet('recordSort', 'newest')
+            ->assertSee('Newest first')
+            ->assertViewHas('rentalRequests', fn ($rows) => $rows->pluck('id')->all() === [$new->id, $tie->id, $old->id])
             ->set('filter', 'all')
             ->assertViewHas('rentalRequests', fn ($rows) => $rows->pluck('id')->all() === [$new->id, $tie->id, $old->id]);
     }

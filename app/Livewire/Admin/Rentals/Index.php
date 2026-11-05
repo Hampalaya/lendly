@@ -51,7 +51,7 @@ class Index extends Component
         RentalLifecycle::markOverdueRentals();
 
         $rentals = $this->filterRecords($this->baseQuery()
-            ->with(['listing', 'owner', 'renter'])
+            ->with(['listing.images', 'owner', 'renter'])
             ->orderByDesc('created_at')
             ->orderByDesc('id'), [], [])->paginate(15);
 

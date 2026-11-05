@@ -22,6 +22,11 @@ trait ListsThreads
 
     public string $threadSort = 'latest';
 
+    public function toggleThreadSort(): void
+    {
+        $this->threadSort = $this->threadSort === 'latest' ? 'oldest' : 'latest';
+    }
+
     protected function threadsForCurrentUser(): Collection
     {
         $rentalThreads = RentalRequest::query()

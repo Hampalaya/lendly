@@ -20,30 +20,36 @@ new class extends Component
 }; ?>
 
 <div
+    class="app-sidebar"
     x-data="{
         open: false,
+        accountMenuOpen: false,
         collapsed: localStorage.getItem('sidebar-collapsed') === 'true',
         toggleCollapsed() {
+            this.accountMenuOpen = false;
             this.collapsed = ! this.collapsed;
             localStorage.setItem('sidebar-collapsed', this.collapsed);
         },
     }"
-    @toggle-sidebar.window="open = ! open"
-    @close-sidebar.window="open = false">
+    @toggle-sidebar.window="open = ! open; accountMenuOpen = false"
+    @close-sidebar.window="open = false; accountMenuOpen = false">
     <!-- Mobile overlay -->
-    <div x-show="open" x-transition.opacity @click="open = false" class="fixed inset-0 z-30 bg-slate-900/50 lg:hidden" style="display: none;"></div>
+    <div x-show="open" x-transition.opacity @click="open = false; accountMenuOpen = false" class="fixed inset-0 z-30 bg-slate-900/50 lg:hidden" style="display: none;"></div>
 
     <aside
-        :class="[open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0', collapsed ? 'lg:w-20' : 'lg:w-72']"
-        class="fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col border-r border-indigo-900 bg-gradient-to-b from-indigo-950 to-indigo-900 transition-all duration-200 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0">
-        <div class="relative flex h-24 items-center justify-between border-b border-indigo-900 px-4" :class="collapsed && 'lg:justify-center lg:px-0'">
-            <a href="{{ auth()->check() ? route(auth()->user()->dashboardRouteName()) : route('listings.index') }}" wire:navigate class="group flex items-center gap-2.5" aria-label="Lendly dashboard">
+        :class="[open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0', collapsed ? 'lg:w-20' : 'lg:w-60']"
+        class="fixed inset-y-0 left-0 z-40 flex w-60 max-w-[calc(100vw-5rem)] shrink-0 flex-col overflow-visible border-r border-indigo-900 bg-gradient-to-b from-indigo-950 to-indigo-900 transition-all duration-200 ease-in-out lg:translate-x-0">
+        <div class="relative flex h-20 shrink-0 items-center justify-between border-b border-indigo-900 px-4" :class="collapsed && 'lg:justify-center lg:px-0'">
+            <a href="{{ auth()->check() ? route(auth()->user()->dashboardRouteName()) : route('listings.index') }}" wire:navigate class="group flex min-w-0 items-center gap-2.5" aria-label="Lendly dashboard">
                 <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/80 bg-white p-0.5 shadow-[0_5px_16px_rgba(37,99,235,0.35)] transition duration-200 group-hover:-translate-y-0.5 group-hover:shadow-[0_8px_20px_rgba(59,130,246,0.45)]">
                     <img src="{{ asset('images/lendlylogo_transparent.png') }}" alt="Lendly logo" class="h-full w-full scale-[1.35] object-contain" />
                 </span>
-                <span class="text-sm font-semibold tracking-tight text-white" x-show="!collapsed" x-cloak x-transition.opacity.duration.100ms>{{ auth()->check() && ! auth()->user()->isAdmin() ? ucfirst(auth()->user()->activeInterface()).' interface' : 'Rent · Share · Earn' }}</span>
+                <span class="min-w-0" :class="collapsed && 'lg:hidden'">
+                    <span class="block text-lg font-bold leading-6 tracking-tight text-white">Lendly</span>
+                    <span class="block truncate text-[10px] font-medium leading-4 tracking-wide text-indigo-300">{{ auth()->check() ? (auth()->user()->isAdmin() ? __('Admin interface') : ucfirst(auth()->user()->activeInterface()).' interface') : __('Rent · Share · Earn') }}</span>
+                </span>
             </a>
-            <button @click="open = false" class="rounded-md p-1 text-indigo-300 hover:bg-indigo-900 hover:text-white lg:hidden" aria-label="Close sidebar">
+            <button type="button" @click="open = false; accountMenuOpen = false" class="rounded-md p-1 text-indigo-300 hover:bg-indigo-900 hover:text-white lg:hidden" aria-label="Close sidebar">
                 <x-icon name="x-mark" class="h-4 w-4" />
             </button>
         </div>
@@ -79,6 +85,9 @@ new class extends Component
             @auth
             <x-sidebar-link :href="route(auth()->user()->dashboardRouteName())" :active="request()->routeIs('*.dashboard') || request()->routeIs('dashboard')" icon="home" wire:navigate>
                 {{ __('Dashboard') }}
+            </x-sidebar-link>
+            <x-sidebar-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')" icon="bell" wire:navigate>
+                {{ __('Notifications') }}
             </x-sidebar-link>
 
             @if (auth()->user()->isRenter() || auth()->user()->isOwner())
@@ -146,37 +155,91 @@ new class extends Component
             @endauth
         </nav>
 
-        <div class="border-t border-indigo-900 p-3">
+        <div class="relative shrink-0 border-t border-indigo-900 p-3">
             @auth
-            <div>
-                <x-dropdown align="top" width="64">
-                    <x-slot name="trigger">
-                        <button type="button" aria-label="{{ __('Account menu') }}" :aria-expanded="open" class="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-indigo-900" :class="collapsed && 'justify-center px-0'">
-                            <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
-                                @if (auth()->user()->avatar_path)
-                                <img src="{{ auth()->user()->avatarUrl() }}" class="h-full w-full object-cover">
-                                @else
-                                {{ Str::of(auth()->user()->name)->substr(0, 1)->upper() }}
-                                @endif
-                            </span>
-                            <span class="min-w-0 flex-1" x-show="!collapsed" x-cloak>
-                                <span class="block truncate text-sm font-medium text-white" x-data="{{ json_encode(['name' => auth()->user()->name]) }}" x-text="name" x-on:profile-updated.window="name = $event.detail.name"></span>
-                                <span class="block truncate text-xs text-indigo-300">{{ auth()->user()->email }}</span>
-                            </span>
-                            <x-icon name="chevron-down" class="h-4 w-4 shrink-0 text-indigo-400" x-show="!collapsed" x-cloak />
-                        </button>
-                    </x-slot>
+            <div
+                x-data="{{ json_encode(['name' => auth()->user()->name]) }}"
+                x-id="['sidebar-account-menu']"
+                @profile-updated.window="name = $event.detail.name"
+                @click.outside="accountMenuOpen = false"
+                @keydown.escape.stop.prevent="if (accountMenuOpen) { accountMenuOpen = false; $refs.accountMenuTrigger.focus() }"
+                @focusout="if (!$el.contains($event.relatedTarget)) accountMenuOpen = false">
+                <div class="flex items-center gap-1" :class="collapsed && 'lg:flex-col'">
+                    <a href="{{ route('profile') }}" wire:navigate aria-label="{{ __('View profile') }}" title="{{ __('View profile') }}" class="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl p-2 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300" :class="collapsed && 'lg:w-full lg:justify-center lg:px-0'">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-100 text-sm font-semibold text-blue-700 ring-2 ring-white/10">
+                            @if (auth()->user()->avatar_path)
+                                <img src="{{ auth()->user()->avatarUrl() }}" alt="{{ __('Your profile photo') }}" class="h-full w-full object-cover">
+                            @else
+                                <span x-text="name.trim().charAt(0).toLocaleUpperCase()">{{ Str::of(auth()->user()->name)->substr(0, 1)->upper() }}</span>
+                            @endif
+                        </span>
+                        <span class="min-w-0 flex-1" :class="collapsed && 'lg:hidden'">
+                            <span class="block truncate text-sm font-semibold text-white" x-text="name"></span>
+                            <span class="mt-0.5 block truncate text-[10px] leading-4 text-indigo-300">{{ auth()->user()->email }}</span>
+                        </span>
+                    </a>
+                    <button
+                        x-ref="accountMenuTrigger"
+                        type="button"
+                        aria-label="{{ __('Account menu') }}"
+                        title="{{ __('Account menu') }}"
+                        aria-haspopup="menu"
+                        :aria-controls="$id('sidebar-account-menu')"
+                        :aria-expanded="accountMenuOpen"
+                        @click="accountMenuOpen = !accountMenuOpen; if (accountMenuOpen) $nextTick(() => $refs.profileAction.focus())"
+                        @keydown.arrow-down.prevent="accountMenuOpen = true; $nextTick(() => $refs.profileAction.focus())"
+                        @keydown.arrow-up.prevent="accountMenuOpen = true; $nextTick(() => $refs.logoutAction.focus())"
+                        class="flex h-9 w-7 shrink-0 items-center justify-center rounded-lg text-indigo-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-300"
+                        :class="[accountMenuOpen && 'bg-white/10 text-white', collapsed && 'lg:h-6 lg:w-10']">
+                        <x-icon name="chevron-down" class="h-4 w-4 transition-transform" ::class="accountMenuOpen ? 'rotate-90' : '-rotate-90'" />
+                    </button>
+                </div>
 
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile')" wire:navigate>
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <button type="button" wire:click="logout" class="block w-full px-4 py-2 text-start text-sm leading-5 text-slate-700 transition duration-150 ease-in-out hover:bg-blue-50 hover:text-blue-700 focus:bg-blue-50 focus:outline-none">
-                            {{ __('Log Out') }}
-                        </button>
-                    </x-slot>
-                </x-dropdown>
+                <div
+                    x-show="accountMenuOpen"
+                    x-cloak
+                    x-transition:enter="transition ease-out duration-150"
+                    x-transition:enter-start="translate-x-1 opacity-0"
+                    x-transition:enter-end="translate-x-0 opacity-100"
+                    x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave-start="translate-x-0 opacity-100"
+                    x-transition:leave-end="translate-x-1 opacity-0"
+                    :id="$id('sidebar-account-menu')"
+                    role="menu"
+                    aria-label="{{ __('Account menu') }}"
+                    aria-orientation="vertical"
+                    @keydown.home.prevent="$refs.profileAction.focus()"
+                    @keydown.end.prevent="$refs.logoutAction.focus()"
+                    class="absolute bottom-3 left-full z-50 ml-2 flex w-14 flex-col items-center gap-1 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-indigo-950/15">
+                    <a
+                        x-ref="profileAction"
+                        href="{{ route('profile') }}"
+                        wire:navigate
+                        role="menuitem"
+                        aria-label="{{ __('Profile') }}"
+                        title="{{ __('Profile') }}"
+                        @click="accountMenuOpen = false"
+                        @keydown.arrow-down.prevent="$refs.logoutAction.focus()"
+                        @keydown.arrow-up.prevent="$refs.logoutAction.focus()"
+                        class="flex h-10 w-10 items-center justify-center rounded-lg text-indigo-600 transition hover:bg-indigo-50 focus:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500">
+                        <x-icon name="user-circle" class="h-5 w-5" aria-hidden="true" />
+                    </a>
+                    <button
+                        x-ref="logoutAction"
+                        type="button"
+                        wire:click="logout"
+                        wire:loading.attr="disabled"
+                        wire:target="logout"
+                        role="menuitem"
+                        aria-label="{{ __('Log Out') }}"
+                        title="{{ __('Log Out') }}"
+                        @click="accountMenuOpen = false"
+                        @keydown.arrow-down.prevent="$refs.profileAction.focus()"
+                        @keydown.arrow-up.prevent="$refs.profileAction.focus()"
+                        class="flex h-10 w-10 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50 focus:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-500 disabled:opacity-50">
+                        <x-icon name="logout" class="h-5 w-5" aria-hidden="true" />
+                    </button>
+                </div>
             </div>
 
             @else

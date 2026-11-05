@@ -210,7 +210,10 @@ class ListingTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(AdminListingsIndex::class)
+            ->set('filter', 'pending_approval')
+            ->assertSee('Reject Blurry Photo Item')
             ->call('startRejecting', $listing->id)
+            ->assertSee('Reason for rejection')
             ->set('rejection_reason', 'Photos are too blurry to review.')
             ->call('confirmReject');
 

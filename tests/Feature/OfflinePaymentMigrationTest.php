@@ -18,6 +18,8 @@ class OfflinePaymentMigrationTest extends TestCase
 
     public function test_upgrade_and_rollback_preserve_existing_payment_and_receipt_data(): void
     {
+        $multipleWalletMigration = require database_path('migrations/2026_11_04_000001_allow_multiple_owner_payment_wallets.php');
+        $multipleWalletMigration->down();
         $walletMigration = require database_path('migrations/2026_10_20_000002_add_owner_wallet_payments.php');
         $walletMigration->down();
         $migration = require database_path('migrations/2026_10_07_000006_add_verified_offline_payments.php');
@@ -50,5 +52,6 @@ class OfflinePaymentMigrationTest extends TestCase
         $this->assertSame([], DB::select('PRAGMA foreign_key_check'));
         $migration->up();
         $walletMigration->up();
+        $multipleWalletMigration->up();
     }
 }

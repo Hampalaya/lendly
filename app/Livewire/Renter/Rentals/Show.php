@@ -75,6 +75,15 @@ class Show extends Component
         session()->flash('status', 'Payment proof submitted. Your booking remains unpaid until receipt of the full amount is verified.');
     }
 
+    public function selectWallet(int $walletId): void
+    {
+        $this->rental->refresh();
+        $this->authorize('pay', $this->rental);
+        RentalPayments::selectWallet($this->rental, auth()->user(), $walletId);
+        $this->resetValidation('payment_wallet');
+        $this->rental->refresh();
+    }
+
     public function cancellationPreview(): ?array
     {
         return $this->rental->isCancellableByRenter()
@@ -227,6 +236,12 @@ class Show extends Component
         return view('livewire.renter.rentals.show', [
             'paymentSettings' => OfflinePaymentSetting::current(),
             'paymentDestination' => $paymentDestination,
+            'paymentWallets' => $this->rental->isPaymentPending()
+                && ($paymentDestination['source'] ?? null) === 'owner_wallet'
+                && auth()->user()->can('pay', $this->rental)
+                && $this->rental->paymentSubmissions->isEmpty()
+                    ? RentalPayments::availableWalletsFor($this->rental->owner_id)
+                    : collect(),
         ]);
     }
 

@@ -181,7 +181,25 @@
                             <p class="mt-1 text-sm text-slate-500">You can return later before the payment deadline. Check the recipient and amount before transferring.</p>
                             <details class="mt-3 rounded-xl border border-blue-100 p-4" open>
                                 <summary class="cursor-pointer rounded text-sm font-semibold text-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100">Pay now — view payment instructions</summary>
-                            <x-payment-destination :destination="$paymentDestination" :rental="$rental" />
+                            @php $selectedWallet = $paymentWallets->first(fn ($wallet) => $wallet->qr_path === ($paymentDestination['qr_path'] ?? null) && $wallet->provider === $paymentDestination['method'] && $wallet->account_name === ($paymentDestination['account_name'] ?? null)); @endphp
+                            @if ($paymentWallets->count() > 1 || ($paymentWallets->isNotEmpty() && ! $selectedWallet))
+                                <div class="mt-4">
+                                    <x-input-label for="payment-wallet" value="Pay with an owner's e-wallet" />
+                                    <select id="payment-wallet" wire:change="selectWallet($event.target.value)" wire:loading.attr="disabled" wire:target="selectWallet,submitPaymentProof" class="mt-2 min-h-11 w-full rounded-lg border-slate-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+                                        @if (! $selectedWallet)
+                                            <option value="" selected disabled>Current booking QR ({{ \App\Models\OfflinePaymentSetting::methodLabel($paymentDestination['method']) }})</option>
+                                        @endif
+                                        @foreach ($paymentWallets as $wallet)
+                                            <option value="{{ $wallet->id }}" @selected($selectedWallet?->id === $wallet->id)>{{ $wallet->providerLabel() }} — {{ $wallet->account_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <p class="mt-1.5 text-xs leading-5 text-slate-500">Choose before transferring. The wallet cannot be changed after you submit payment proof.</p>
+                                    <x-input-error :messages="$errors->get('payment_wallet')" class="mt-2" />
+                                </div>
+                            @endif
+                            <div wire:key="booking-payment-qr-{{ md5(json_encode($paymentDestination)) }}">
+                                <x-payment-destination :destination="$paymentDestination" :rental="$rental" />
+                            </div>
                             @if (($paymentDestination['source'] ?? null) === 'owner_wallet')
                                 <p class="mt-3 text-sm leading-6 text-slate-600">Open your e-wallet app and scan or import this QR. Confirm the recipient account name and the full total above before paying. Complete the payment in your e-wallet, then upload its transfer confirmation below. The owner confirms the full amount to mark the booking paid. No admin approval is required. Submitting proof does not mark this booking paid.</p>
                             @else

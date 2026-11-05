@@ -1,17 +1,13 @@
 <div>
     <x-page-header eyebrow="Administration" title="ID reviews" subtitle="Review National ID photos and selfies before enabling renting and listing." />
-    <div class="px-4 sm:px-6 lg:px-8"><x-record-controls /></div>
+    <div class="px-4 pt-3 sm:px-6 lg:px-8">
+        <x-record-toolbar :filter="$filter" :sort="$sort" :filters="['all' => 'All Statuses', 'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled']" placeholder="Search ID reviews..." search-label="Search ID reviews" label="ID review controls" />
+    </div>
 
-    <div class="w-full space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="w-full space-y-3 px-4 pb-6 pt-3 sm:px-6 lg:px-8">
         @if (session('status'))
             <p class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800" role="status">{{ session('status') }}</p>
         @endif
-
-        <div class="flex flex-wrap gap-2" aria-label="Filter ID reviews">
-            @foreach (['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled', 'all' => 'All'] as $value => $label)
-                <button type="button" wire:click="$set('filter', '{{ $value }}')" aria-pressed="{{ $filter === $value ? 'true' : 'false' }}" class="min-h-10 rounded-full border px-4 py-2 text-xs font-semibold focus:outline-none focus:ring-4 focus:ring-blue-100 {{ $filter === $value ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">{{ $label }}</button>
-            @endforeach
-        </div>
 
         <div class="grid items-start gap-6 xl:grid-cols-[20rem_minmax(0,1fr)]">
             <section aria-label="ID review queue" class="space-y-3">

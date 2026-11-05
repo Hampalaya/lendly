@@ -132,7 +132,7 @@ class PhaseTwoListingTest extends TestCase
 
     public function test_original_price_shows_live_insight_inside_item_details_without_changing_the_rate(): void
     {
-        $form = $this->form()->assertSeeInOrder(['Original price', 'Market insight', 'Location & logistics', 'Pricing & deposit'])
+        $form = $this->form()->assertSeeInOrder(['Original price', 'Market insight', 'Pricing & deposit', 'Item location'])
             ->assertSee('Enter the original price above to get a suggested daily rental rate.');
         $form->set('estimated_original_price', 10000)->assertSee('10,000.00')->assertSee('Suggested daily rate: ₱100.00')
             ->assertSee('Starting estimate: 1%')->assertSet('price_per_day', 200.0);

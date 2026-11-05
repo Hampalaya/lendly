@@ -1,12 +1,11 @@
-@props(['threads', 'activeId' => null, 'search' => ''])
+@props(['threads', 'activeId' => null, 'search' => '', 'threadFilter' => 'all', 'threadSort' => 'latest'])
 
-<div class="w-full px-4 py-6 sm:px-6 lg:px-8">
-    <div class="flex h-[calc(100dvh-11rem)] min-h-[32rem] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <aside aria-label="Conversation list" class="w-full shrink-0 flex-col border-r border-slate-100 md:w-72 xl:w-80 {{ $activeId ? 'hidden md:flex' : 'flex' }}">
-            <div class="space-y-4 px-5 pb-4 pt-5">
+<div class="messages-workspace flex min-h-0 flex-1 bg-white">
+    <div class="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        <aside aria-label="Conversation list" class="min-h-0 w-full shrink-0 flex-col border-r border-slate-200 md:w-80 xl:w-[22rem] {{ $activeId ? 'hidden md:flex' : 'flex' }}">
+            <div class="shrink-0 space-y-4 px-5 pb-3 pt-5">
                 <div class="flex items-center justify-between gap-3">
                     <h2 class="text-xl font-bold tracking-tight text-slate-900">Chats</h2>
-                    <span class="grid h-9 w-9 place-items-center rounded-full bg-blue-50 text-blue-600"><x-icon name="chat" class="h-5 w-5" aria-hidden="true" /></span>
                 </div>
                 <div class="relative">
                     <label for="conversation-search" class="sr-only">Search conversations</label>
@@ -15,11 +14,36 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 px-4 pb-3">
-                <label class="text-xs text-slate-600">Filter chats<select wire:model.live="threadFilter" class="mt-1 w-full rounded-lg border-slate-300 text-xs"><option value="all">All chats</option><option value="unread">Unread</option><option value="rentals">Rental requests</option><option value="listings">Item inquiries</option></select></label>
-                <label class="text-xs text-slate-600">Sort chats<select wire:model.live="threadSort" class="mt-1 w-full rounded-lg border-slate-300 text-xs"><option value="latest">Latest activity</option><option value="oldest">Oldest activity</option></select></label>
+            <div class="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 pb-3">
+                <div class="relative flex h-10 w-14 items-center justify-center gap-1 rounded-xl {{ $threadFilter === 'all' ? 'bg-slate-100 text-slate-600' : 'bg-blue-50 text-blue-600' }} focus-within:ring-2 focus-within:ring-blue-500 hover:bg-blue-50">
+                    <x-icon name="filter" class="pointer-events-none h-5 w-5" aria-hidden="true" />
+                    <x-icon name="chevron-down" class="pointer-events-none h-3 w-3" aria-hidden="true" />
+                    <label for="conversation-filter" class="sr-only">Filter chats</label>
+                    <select id="conversation-filter" wire:model.live="threadFilter" title="Filter chats" class="absolute inset-0 h-full w-full cursor-pointer opacity-0">
+                        <option value="all">All chats</option>
+                        <option value="unread">Unread</option>
+                        <option value="rentals">Rental requests</option>
+                        <option value="listings">Item inquiries</option>
+                    </select>
+                    @if ($threadFilter !== 'all')
+                        <span class="pointer-events-none absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-blue-600" aria-hidden="true"></span>
+                    @endif
+                </div>
+                <button
+                    type="button"
+                    wire:click="toggleThreadSort"
+                    aria-label="{{ $threadSort === 'latest' ? 'Latest activity first. Show oldest activity first' : 'Oldest activity first. Show latest activity first' }}"
+                    title="{{ $threadSort === 'latest' ? 'Latest activity first' : 'Oldest activity first' }}"
+                    wire:loading.attr="disabled"
+                    wire:target="toggleThreadSort"
+                    class="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-600 transition hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                    <svg class="h-5 w-5 {{ $threadSort === 'oldest' ? 'rotate-180' : '' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m-6-6 6 6 6-6" />
+                    </svg>
+                </button>
             </div>
-            <div class="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-3">
+            <div class="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-2 py-3">
                 @forelse ($threads as $thread)
                     <a
                         href="{{ $thread['url'] }}"
@@ -72,7 +96,7 @@
             </div>
         </aside>
 
-        <section aria-label="Conversation" class="min-w-0 flex-1 flex-col {{ $activeId ? 'flex' : 'hidden md:flex' }}">
+        <section aria-label="Conversation" class="min-h-0 min-w-0 flex-1 flex-col {{ $activeId ? 'flex' : 'hidden md:flex' }}">
             {{ $slot }}
         </section>
     </div>

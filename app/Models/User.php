@@ -79,7 +79,7 @@ class User extends Authenticatable implements MustVerifyEmail
                 'suspension_reason' => null,
             ])->save();
 
-            if ($wallet = OwnerPaymentSetting::currentFor($user->id)) {
+            foreach (OwnerPaymentSetting::where('user_id', $user->id)->get() as $wallet) {
                 $wallet->delete();
                 if ($wallet->qr_path) {
                     OwnerPaymentSetting::deleteUnreferencedQr($wallet->qr_path);

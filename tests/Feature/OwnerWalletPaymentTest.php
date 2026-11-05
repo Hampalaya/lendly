@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\RentalAdminActionType;
 use App\Enums\RentalStatus;
+use App\Livewire\Renter\Rentals\Show as RenterShow;
 use App\Models\Category;
 use App\Models\Listing;
 use App\Models\OfflinePaymentSetting;
@@ -20,6 +21,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Concerns\CreatesPaymentProof;
@@ -316,9 +318,61 @@ class OwnerWalletPaymentTest extends TestCase
         }
     }
 
+    public function test_new_bookings_use_an_available_wallet_when_the_first_wallet_is_disabled_or_missing(): void
+    {
+        $rental = $this->rental();
+        $this->wallet($rental->owner, ['enabled' => false]);
+        $missing = $this->wallet($rental->owner);
+        Storage::disk('local')->delete($missing->qr_path);
+        $available = $this->wallet($rental->owner, ['provider' => 'grabpay']);
+
+        $destination = RentalPayments::destinationFor($rental, $rental->renter);
+
+        $this->assertSame('grabpay', $destination['method']);
+        $this->assertSame($available->qr_path, $destination['qr_path']);
+    }
+
+    public function test_renter_can_choose_another_owners_wallet_and_submit_proof_for_that_destination(): void
+    {
+        $rental = $this->rental();
+        $first = $this->wallet($rental->owner);
+        $second = $this->wallet($rental->owner, ['provider' => 'shopeepay', 'account_name' => 'Second recipient']);
+        $stranger = $this->wallet(User::factory()->create(), ['account_name' => 'Private stranger wallet']);
+
+        $component = Livewire::actingAs($rental->renter)->test(RenterShow::class, ['rental' => $rental])
+            ->assertSee('ShopeePay')->assertDontSee($stranger->account_name)
+            ->call('selectWallet', $second->id)->assertHasNoErrors()->assertSee('Second recipient');
+        $this->assertSame($second->qr_path, $rental->fresh()->payment_destination['qr_path']);
+        $component->call('selectWallet', $stranger->id)->assertHasErrors('payment_wallet');
+        $this->assertSame($second->qr_path, $rental->fresh()->payment_destination['qr_path']);
+
+        $component->set('payment_reference', 'SECOND-WALLET')->set('payment_proof', $this->paymentProof())
+            ->call('submitPaymentProof')->assertHasNoErrors();
+        $submission = $rental->paymentSubmissions()->sole();
+        $this->assertSame('shopeepay', $submission->method);
+        $this->assertSame($second->qr_path, $submission->payment_destination['qr_path']);
+        $component->call('selectWallet', $first->id)->assertForbidden();
+        $this->assertSame($second->qr_path, $rental->fresh()->payment_destination['qr_path']);
+    }
+
+    public function test_changing_wallet_is_rejected_after_any_payment_proof_or_for_another_renter(): void
+    {
+        $rental = $this->rental();
+        $this->wallet($rental->owner);
+        $second = $this->wallet($rental->owner, ['provider' => 'coins_ph']);
+        $submission = $this->submit($rental);
+        $submission->update(['status' => 'rejected']);
+        $original = $rental->fresh()->payment_destination;
+
+        $this->validationRejects(fn () => RentalPayments::selectWallet($rental, $rental->renter, $second->id));
+        $this->assertSame($original, $rental->fresh()->payment_destination);
+        $this->expectException(AuthorizationException::class);
+        RentalPayments::selectWallet($rental, User::factory()->create(), $second->id);
+    }
+
     private function wallet(User $owner, array $attributes = []): OwnerPaymentSetting
     {
-        $path = 'owner-wallet-qr/'.$owner->id.'.png';
+        $path = 'owner-wallet-qr/'.$owner->id.'-'.Str::random(12).'.png';
         Storage::disk('local')->put($path, 'Synthetic wallet QR image');
 
         return OwnerPaymentSetting::create(array_replace([

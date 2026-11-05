@@ -93,7 +93,7 @@ class PhaseFourAgreementTest extends TestCase
     {
         [$owner, $renter, $listing, $request] = $this->requestFixture();
         Livewire::actingAs($owner)->test(Index::class)->call('approve', $request->id)->assertHasNoErrors();
-        Livewire::test(Index::class)->set('filter', 'awaiting_agreement')->assertSee('Agreement camera')->assertSee('Review rental agreement');
+        Livewire::test(Index::class)->set('filter', 'awaiting_agreement')->assertSee('Agreement camera')->assertSee('Review Rental Agreement');
         Livewire::actingAs($renter)->test(RenterRequests::class)->call('cancel', $request->id)->assertHasNoErrors();
         $this->assertSame(RentalRequestStatus::Cancelled, $request->fresh()->status);
         $this->assertFalse($listing->hasApprovedOverlap($request->start_date, $request->end_date));

@@ -7,8 +7,10 @@ use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -23,19 +25,43 @@ class Settings extends Component
 
     public string $instructions = '';
 
-    public bool $enabled = false;
+    public bool $enabled = true;
+
+    public bool $showForm = false;
+
+    #[Locked]
+    public ?int $editingId = null;
 
     public $qr_image = null;
 
     public function mount(): void
     {
-        $member = $this->member();
-        if ($settings = OwnerPaymentSetting::currentFor($member->id)) {
-            $this->provider = $settings->provider;
-            $this->account_name = $settings->account_name;
-            $this->instructions = $settings->instructions ?? '';
-            $this->enabled = $settings->enabled;
-        }
+        $this->member();
+    }
+
+    public function addWallet(): void
+    {
+        $this->member();
+        $this->clearForm();
+        $this->showForm = true;
+    }
+
+    public function edit(int $id): void
+    {
+        $settings = OwnerPaymentSetting::where('user_id', $this->member()->id)->findOrFail($id);
+        $this->clearForm();
+        $this->editingId = $settings->id;
+        $this->provider = $settings->provider;
+        $this->account_name = $settings->account_name;
+        $this->instructions = $settings->instructions ?? '';
+        $this->enabled = $settings->enabled;
+        $this->showForm = true;
+    }
+
+    public function cancel(): void
+    {
+        $this->member();
+        $this->clearForm();
     }
 
     public function save(): void
@@ -44,7 +70,7 @@ class Settings extends Component
         $this->account_name = trim($this->account_name);
         $this->instructions = trim($this->instructions);
         $validated = $this->validate([
-            'provider' => ['required', 'in:maya,gcash'],
+            'provider' => ['required', Rule::in(array_keys(OwnerPaymentSetting::PROVIDERS))],
             'account_name' => ['required', 'string', 'max:120'],
             'instructions' => ['nullable', 'string', 'max:1000'],
             'enabled' => ['boolean'],
@@ -58,8 +84,9 @@ class Settings extends Component
         try {
             DB::transaction(function () use ($validated, &$storedPath, &$oldPath) {
                 $member = $this->member(lock: true);
-                $settings = OwnerPaymentSetting::where('user_id', $member->id)->lockForUpdate()->first()
-                    ?? new OwnerPaymentSetting(['user_id' => $member->id]);
+                $settings = $this->editingId === null
+                    ? new OwnerPaymentSetting(['user_id' => $member->id])
+                    : OwnerPaymentSetting::where('user_id', $member->id)->lockForUpdate()->findOrFail($this->editingId);
                 $oldPath = $settings->qr_path;
 
                 if ($this->qr_image) {
@@ -70,8 +97,8 @@ class Settings extends Component
                     $settings->qr_path = $storedPath;
                 }
 
-                if ($validated['enabled'] && (! $settings->qr_path || ! Storage::disk('local')->exists($settings->qr_path))) {
-                    throw ValidationException::withMessages(['qr_image' => 'Upload your payment QR image before enabling e-wallet payments.']);
+                if ((! $settings->exists || $validated['enabled']) && (! $settings->qr_path || ! Storage::disk('local')->exists($settings->qr_path))) {
+                    throw ValidationException::withMessages(['qr_image' => 'Upload your payment QR image before saving this e-wallet.']);
                 }
 
                 $settings->fill($validated)->save();
@@ -86,20 +113,17 @@ class Settings extends Component
         if ($storedPath && $oldPath && $oldPath !== $storedPath) {
             OwnerPaymentSetting::deleteUnreferencedQr($oldPath);
         }
-        $this->reset('qr_image');
+        $this->clearForm();
         session()->flash('status', 'Payment QR settings saved.');
     }
 
-    public function removeQr(): void
+    public function removeQr(int $id): void
     {
-        $oldPath = DB::transaction(function () {
+        $oldPath = DB::transaction(function () use ($id) {
             $member = $this->member(lock: true);
-            $settings = OwnerPaymentSetting::where('user_id', $member->id)->lockForUpdate()->first();
-            if (! $settings) {
-                return null;
-            }
+            $settings = OwnerPaymentSetting::where('user_id', $member->id)->lockForUpdate()->findOrFail($id);
             $oldPath = $settings->qr_path;
-            $settings->update(['qr_path' => null, 'enabled' => false]);
+            $settings->delete();
 
             return $oldPath;
         });
@@ -107,9 +131,16 @@ class Settings extends Component
         if ($oldPath) {
             OwnerPaymentSetting::deleteUnreferencedQr($oldPath);
         }
-        $this->reset('qr_image');
-        $this->enabled = false;
-        session()->flash('status', 'Payment QR removed. E-wallet payments are disabled for new payment instructions.');
+        if ($this->editingId === $id) {
+            $this->clearForm();
+        }
+        session()->flash('status', 'E-wallet removed. Existing bookings keep their original payment instructions.');
+    }
+
+    private function clearForm(): void
+    {
+        $this->reset('provider', 'account_name', 'instructions', 'enabled', 'qr_image', 'editingId', 'showForm');
+        $this->resetValidation();
     }
 
     private function member(bool $lock = false): User
@@ -128,6 +159,12 @@ class Settings extends Component
     {
         $member = $this->member();
 
-        return view('livewire.owner.payments.settings', ['settings' => OwnerPaymentSetting::currentFor($member->id)]);
+        $wallets = OwnerPaymentSetting::where('user_id', $member->id)->latest('id')->get();
+
+        return view('livewire.owner.payments.settings', [
+            'wallets' => $wallets,
+            'editingWallet' => $wallets->firstWhere('id', $this->editingId),
+            'providers' => OwnerPaymentSetting::PROVIDERS,
+        ]);
     }
 }

@@ -20,10 +20,12 @@ class OfflinePaymentSetting extends Model
 
     public static function methodLabel(string $method): string
     {
+        if (isset(OwnerPaymentSetting::PROVIDERS[$method])) {
+            return OwnerPaymentSetting::PROVIDERS[$method];
+        }
+
         return match ($method) {
             'cash' => 'Cash collection',
-            'maya' => 'Maya',
-            'gcash' => 'GCash',
             default => 'Bank transfer',
         };
     }

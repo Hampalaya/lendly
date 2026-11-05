@@ -72,12 +72,20 @@ class Index extends Component
         return $admin;
     }
 
+    protected function effectiveRecordSort(): string
+    {
+        return $this->recordSort === 'oldest' || ($this->recordSort === 'default' && $this->filter === 'pending')
+            ? 'oldest'
+            : 'newest';
+    }
+
     public function render(): View
     {
         $this->admin();
         abort_unless(in_array($this->filter, ['pending', 'approved', 'rejected', 'cancelled', 'all'], true), 403);
 
         return view('livewire.admin.identity-submissions.index', [
+            'sort' => $this->effectiveRecordSort(),
             'submissions' => $this->filterRecords(IdentitySubmission::query()->with('user')
                 ->when($this->filter !== 'all', fn ($query) => $query->where('status', $this->filter))
                 ->orderBy('id', $this->filter === 'pending' ? 'asc' : 'desc'), ['id'], ['user' => ['name', 'email']])->paginate(10),
