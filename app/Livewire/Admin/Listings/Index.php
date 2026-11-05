@@ -26,6 +26,10 @@ class Index extends Component
 
     public string $rejection_reason = '';
 
+    public ?int $removing = null;
+
+    public string $removal_reason = '';
+
     public function updatingFilter(): void
     {
         $this->resetPage();
@@ -78,9 +82,32 @@ class Index extends Component
     {
         $this->admin();
         $listing = Listing::findOrFail($listingId);
+        abort_unless($listing->status === ListingStatus::Published, 409);
+        $this->resetValidation('removal_reason');
+        $this->removing = $listing->id;
+        $this->removal_reason = '';
+    }
 
-        $listing->update(['status' => ListingStatus::Inactive]);
-        ListingProgress::notify($listing, 'status');
+    public function cancelRemoving(): void
+    {
+        $this->reset('removing', 'removal_reason');
+        $this->resetValidation('removal_reason');
+    }
+
+    public function confirmRemoval(): void
+    {
+        $this->admin();
+        $this->removal_reason = trim($this->removal_reason);
+        $this->validate(['removal_reason' => ['required', 'string', 'max:255']]);
+
+        DB::transaction(function () {
+            $listing = Listing::lockForUpdate()->findOrFail($this->removing);
+            abort_unless($listing->status === ListingStatus::Published, 409);
+            $listing->update(['status' => ListingStatus::Inactive, 'rejection_reason' => $this->removal_reason]);
+            ListingProgress::notify($listing, 'status');
+        });
+
+        $this->cancelRemoving();
     }
 
     public function render(): View

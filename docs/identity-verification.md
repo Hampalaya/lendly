@@ -15,10 +15,12 @@ A raw cosine score is not a probability, confidence percentage or automatic verd
 
 ## Local setup
 
-Python 3.10+ is required. From the project directory:
+On Linux or macOS, create the environment with `python3.13 -m venv storage/app/private/face-runtime` instead of the Windows `py` command below.
+
+Use Python 3.10–3.13 with the pinned dependencies; Python 3.13 is recommended. Python 3.14 is not supported by the current NumPy 2.2.6 pin. Check `python --version` before creating the environment, or select Python 3.13 explicitly with the Windows Python launcher as shown below. From the project directory:
 
 ```powershell
-python -m venv storage/app/private/face-runtime
+py -3.13 -m venv storage/app/private/face-runtime
 & storage/app/private/face-runtime/Scripts/python.exe -m pip install -r scripts/face-match/requirements.txt
 & storage/app/private/face-runtime/Scripts/python.exe scripts/face-match/setup_models.py storage/app/private/face-models
 php artisan migrate

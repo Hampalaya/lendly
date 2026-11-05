@@ -127,10 +127,11 @@ class PaymentReservationTest extends TestCase
                 && $ranges->first()->end_date->equalTo($rental->end_date))
             ->assertSee('Reserved Oct 18, 2026 – Oct 20, 2026');
         $this->withSession(['active_interface' => 'owner']);
-        Livewire::actingAs($owner)->test(OwnerListingsIndex::class)
+        $ownerPage = Livewire::actingAs($owner)->test(OwnerListingsIndex::class)
             ->assertSee('wire:poll.15s.visible', false)
-            ->assertViewHas('listings', fn ($listings) => $listings->first()->availabilityStatus() === ListingAvailabilityStatus::Reserved)
-            ->assertSee('Reserved Oct 18, 2026 – Oct 20, 2026');
+            ->assertViewHas('listings', fn ($listings) => $listings->first()->availabilityStatus() === ListingAvailabilityStatus::Reserved);
+        $this->assertStringContainsString('Reserved Oct 18, 2026 – Oct 20, 2026',
+            html_entity_decode(strip_tags($ownerPage->html()), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }
 
     public function test_rejected_payment_proof_does_not_reserve_the_item(): void

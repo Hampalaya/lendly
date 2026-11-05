@@ -55,7 +55,7 @@
                     @if ($rental->payment)
                         <x-rental-panel title="Transaction receipt" icon="calculator">
                             <p class="mt-4 break-all font-mono text-sm">{{ $rental->payment->transaction_reference }}</p>
-                            <p class="mt-1 text-sm text-slate-500">Paid {{ $rental->payment->paid_at?->format('M d, Y g:i A') ?? 'Not recorded' }}</p>
+                            <p class="mt-1 text-sm text-slate-500">Paid {{ $rental->payment->paid_at?->copy()->setTimezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Not recorded' }} (Philippine time)</p>
                             <p class="mt-2 text-sm">Owner: {{ $rental->owner->name }} · Renter: {{ $rental->renter->name }}</p>
                             <p class="mt-2 font-semibold">Payment total: ₱{{ number_format($rental->payment->amount, 2) }}</p>
                             @if (($rental->payment_destination['source'] ?? null) === 'owner_wallet')
