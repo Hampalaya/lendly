@@ -1,6 +1,6 @@
 # Demo database seeding
 
-Updated 7 November 2026. Demo seeders run only when `APP_ENV` is `local` or `testing`. They add synthetic accounts, listings and examples; they do not import another installation's database or uploaded photos.
+Updated 7 November 2026. By default, demo seeders run only when `APP_ENV` is `local` or `testing`. A command-scoped override is available for an intentional deployed demo (see below). They add synthetic accounts, listings and examples; they do not import another installation's database or uploaded photos.
 
 ## Normal local setup
 
@@ -14,7 +14,7 @@ php artisan storage:link
 
 The default seeder creates the demo admin, owner and renter, the category catalogue, additional demo members and illustrated listings, and the marketplace demo below. On an entirely fresh database it also creates the legacy example rental/payment/history/message/dispute dataset. On an existing installation it skips that historical dataset so seeding does not attach synthetic financial records or damage reports to existing activity. The default database writes are wrapped in a transaction.
 
-Newly created demo accounts use password `password`. Existing passwords, names, roles, suspensions, verification state and soft-deleted records are preserved. Fresh owner/renter fixtures are marked identity verified for local demonstrations; this does not represent review of a real person's ID and is unavailable outside local/testing environments. Existing unverified or suspended accounts are not upgraded to make seeding work.
+Newly created demo accounts use password `password`. Existing passwords, names, roles, suspensions, verification state and soft-deleted records are preserved. Fresh owner/renter fixtures are marked identity verified for demonstrations; this does not represent review of a real person's ID. Outside local/testing environments, creating these fixtures requires the explicit override below. Existing unverified or suspended accounts are not upgraded to make seeding work.
 
 Main accounts:
 
@@ -36,6 +36,21 @@ php artisan db:seed --class=MarketplaceDemoSeeder
 This standalone command creates the category catalogue, two verified demo members (`marketplace.owner@lendly.test` and `marketplace.renter@lendly.test`), three listings and one pending three-day camera request. The projector is pending moderation; the camera and drill are published. Each new item has dates, opening hours, a map pin and a local placeholder photo. The camera request records exact Philippine pickup/return times and uses the application's normal quotation/submission service.
 
 Repeat runs preserve matching fixtures and their subsequent status, price and password changes. Cancelling the example request does not cause seeding to replace it. If an existing marketplace account is unverified, suspended, deleted or ineligible, its state is retained and new marketplace fixtures are skipped. Existing listing availability dates are not extended on every seed run; expired demo listings can be adjusted through the normal owner form.
+
+## Explicit deployed demo (Railway)
+
+After deploying this code, keep `APP_ENV=production`. In the **lendly app service → Console** (not the MySQL service), run:
+
+```bash
+cd /app
+ALLOW_DEMO_SEEDING=1 php artisan db:seed --class=MarketplaceDemoSeeder
+```
+
+Answer yes to Laravel's production confirmation. `--force` only skips that prompt; it does not replace the override. The prefix enables demo seeding only for this command, including when Laravel configuration is cached. Use the command prefix instead of a permanent Railway environment variable.
+
+The override is shared by all demo seeders, so use the named marketplace command for this smaller dataset. Without the exact process environment value `ALLOW_DEMO_SEEDING=1`, production demo seeding remains blocked.
+
+This creates two identity-verified demo accounts with the known password `password`, three listings, categories and a pending request. Change the demo passwords before opening the site to public users. Existing matching accounts and listings are preserved, and rerunning does not duplicate unchanged fixtures. This command writes to the deployed database and public upload storage; it is not a dry run.
 
 ## Optional volume datasets
 

@@ -17,8 +17,9 @@ abstract class DemoSeeder extends Seeder
 
     protected function ensureDemoEnvironment(): void
     {
-        if (! app()->environment(['local', 'testing'])) {
-            throw new RuntimeException('Demo data can only be seeded in local and testing environments.');
+        // Read the process environment so a one-command opt-in works with cached config.
+        if (! app()->environment(['local', 'testing']) && getenv('ALLOW_DEMO_SEEDING') !== '1') {
+            throw new RuntimeException('Demo data can only be seeded in local and testing environments unless ALLOW_DEMO_SEEDING=1 is explicitly set.');
         }
     }
 

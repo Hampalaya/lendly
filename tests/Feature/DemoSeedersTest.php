@@ -180,6 +180,53 @@ class DemoSeedersTest extends TestCase
         $this->assertSame('Custom cameras', $camera->fresh()->name);
     }
 
+    public function test_marketplace_allows_production_only_with_explicit_override_and_preserves_existing_data(): void
+    {
+        $previous = getenv('ALLOW_DEMO_SEEDING');
+        putenv('ALLOW_DEMO_SEEDING=1');
+
+        try {
+            $existing = User::factory()->suspended()->create(['email' => 'existing@example.com']);
+            $before = $existing->fresh()->getAttributes();
+            $this->app->instance('env', 'production');
+            $this->artisan('db:seed', ['--class' => MarketplaceDemoSeeder::class, '--force' => true])->assertSuccessful();
+            $counts = $this->counts();
+            $this->artisan('db:seed', ['--class' => MarketplaceDemoSeeder::class, '--force' => true])->assertSuccessful();
+
+            $this->assertTrue($this->app->environment('production'));
+            $this->assertSame(3, User::count());
+            $this->assertSame(3, Listing::count());
+            $this->assertSame(1, RentalRequest::count());
+            $this->assertSame($counts, $this->counts());
+            $this->assertSame($before, $existing->fresh()->getAttributes());
+        } finally {
+            putenv($previous === false ? 'ALLOW_DEMO_SEEDING' : 'ALLOW_DEMO_SEEDING='.$previous);
+        }
+    }
+
+    public function test_production_demo_seeding_rejects_missing_or_invalid_overrides(): void
+    {
+        $previous = getenv('ALLOW_DEMO_SEEDING');
+        $this->app->instance('env', 'production');
+
+        try {
+            foreach ([false, '', '0', 'true', 'yes'] as $value) {
+                putenv($value === false ? 'ALLOW_DEMO_SEEDING' : 'ALLOW_DEMO_SEEDING='.$value);
+                try {
+                    $this->app->make(MarketplaceDemoSeeder::class)->run();
+                    $this->fail('Production demo seeding accepted an invalid override.');
+                } catch (RuntimeException $exception) {
+                    $this->assertStringContainsString('local and testing', $exception->getMessage());
+                }
+            }
+            $this->assertSame(0, User::count());
+            $this->assertSame(0, Category::count());
+            $this->assertSame(0, Listing::count());
+        } finally {
+            putenv($previous === false ? 'ALLOW_DEMO_SEEDING' : 'ALLOW_DEMO_SEEDING='.$previous);
+        }
+    }
+
     public function test_every_demo_entry_point_is_disabled_outside_local_and_testing(): void
     {
         $this->app->instance('env', 'production');
