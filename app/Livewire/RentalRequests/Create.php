@@ -50,16 +50,25 @@ class Create extends Component
         $this->listing = $listing;
         $this->presentedTerms = RentalRequestSubmission::termsFor($listing);
         $this->modal = $modal;
-        $nextStart = now('Asia/Manila')->startOfHour()->addHour();
-        if ($nextStart->format('H:i') >= $listing->available_time_until) {
-            $nextStart->addDay()->startOfDay();
-        }
-        $this->start_date = max($nextStart->toDateString(), $listing->available_from?->toDateString() ?? '');
-        $this->end_date = $this->start_date;
-        $this->start_time = $this->start_date === now('Asia/Manila')->toDateString()
-            ? max($nextStart->format('H:i'), $listing->available_time_from) : $listing->available_time_from;
-        $this->end_time = min(Carbon::parse($this->start_time)->addHour()->format('H:i'), $listing->available_time_until);
         $this->rental_unit = $listing->allows_daily_rentals ? 'day' : 'hour';
+        $nextStart = now('Asia/Manila')->startOfHour()->addHour();
+        $date = max($nextStart->toDateString(), $listing->available_from?->toDateString() ?? '');
+        $start = Carbon::parse($date.' '.$listing->available_time_from, 'Asia/Manila')->max($nextStart);
+        $closing = Carbon::parse($date.' '.$listing->available_time_until, 'Asia/Manila');
+
+        // Compare complete instants before formatting: 00:00 may be tomorrow.
+        // Prefer the next opening over an invalid or partial hourly period.
+        $nextDate = $start->copy()->addDay()->toDateString();
+        if ($start->copy()->addHour()->gt($closing)
+            && (! $listing->available_until || $nextDate <= $listing->available_until->toDateString())) {
+            $start = Carbon::parse($nextDate.' '.$listing->available_time_from, 'Asia/Manila');
+            $closing = Carbon::parse($nextDate.' '.$listing->available_time_until, 'Asia/Manila');
+        }
+        $end = $start->copy()->addHour()->min($closing);
+        $this->start_date = $start->toDateString();
+        $this->end_date = $end->toDateString();
+        $this->start_time = $start->format('H:i');
+        $this->end_time = $end->format('H:i');
 
         $this->fulfillment_method = $listing->pickup_available
             ? FulfillmentMethod::Pickup->value

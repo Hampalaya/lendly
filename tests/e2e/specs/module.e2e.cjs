@@ -303,7 +303,7 @@ describe('Module tests', () => {
   });
 
   describe('Admin moderation module', () => {
-    it('IT-27 admin removes a live listing; it leaves the marketplace (FR-27)', async () => {
+    it('IT-27 admin removes a live listing with a reason shared with its owner (FR-27)', async () => {
       await asAdmin();
       // The list shows 10 per page; find the page that holds the listing.
       for (let page = 1; page <= 5; page++) {
@@ -311,8 +311,14 @@ describe('Module tests', () => {
         if (await $(`[wire\\:click="remove(${fx.listings.suspicious.id})"]`).isExisting()) break;
       }
       await a.clickWire(`remove(${fx.listings.suspicious.id})`);
+      const reason = 'QA: replace the misleading listing photos.';
+      await a.type('#listing-removal-reason', reason);
+      await a.submitWireForm('confirmRemoval');
       await browser.pause(1500);
       await a.assertNoServerError();
+      await loginAs(fx.users.owner.email, 'owner');
+      await browser.url(`/owner/listings/${fx.listings.suspicious.id}/edit`);
+      await a.waitForText(reason);
       await freshSession();
       await browser.url('/listings');
       await a.type('input[aria-label="Search items"]', fx.listings.suspicious.name);

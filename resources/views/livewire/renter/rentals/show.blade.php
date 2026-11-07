@@ -102,7 +102,7 @@
                             </div>
                         </dl>
 
-                        <p class="mt-4 text-xs text-slate-400">Paid on {{ $rental->paid_at->format('M d, Y \a\t g:i A') }}</p>
+                        <p class="mt-4 text-xs text-slate-400">Paid on {{ $rental->paid_at->copy()->setTimezone('Asia/Manila')->format('M d, Y \a\t g:i A') }} (Philippine time)</p>
                         @if ($rental->payment->method)
                             <p class="mt-2 text-xs text-slate-500">Verified {{ \App\Models\OfflinePaymentSetting::methodLabel($rental->payment->method) }} · Reference: {{ $rental->payment->external_reference }}</p>
                         @endif

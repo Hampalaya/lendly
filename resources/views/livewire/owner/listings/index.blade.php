@@ -41,6 +41,9 @@
                             &#8369;{{ number_format($listing->allows_daily_rentals ? $listing->price_per_day : $listing->price_per_hour, 2) }}<span class="font-normal text-slate-500"> / {{ $listing->allows_daily_rentals ? 'day' : 'hour' }}</span>
                         </p>
                         <div class="mt-1"><x-badge :color="$listing->status->badgeColor()">{{ $listing->status->label() }}</x-badge></div>
+                        @if ($listing->rejection_reason)
+                            <p class="mt-2 text-xs text-rose-700">Administrator feedback: {{ $listing->rejection_reason }}</p>
+                        @endif
 
                         <x-slot:aside>
                             <div class="mb-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">

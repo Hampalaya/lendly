@@ -54,16 +54,16 @@
             </div>
         </div>
         <x-input-error :messages="$errors->get('identity')" class="mb-4" role="alert" />
-        @if ($listing?->status?->value === 'rejected' && $listing->rejection_reason)
+        @if ($listing?->rejection_reason)
             <div class="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-                <p class="font-semibold">This listing was rejected</p><p class="mt-1">{{ $listing->rejection_reason }}</p>
+                <p class="font-semibold">Administrator feedback</p><p class="mt-1">{{ $listing->rejection_reason }}</p>
             </div>
         @endif
         @if ($errors->any())
             <div role="alert" class="mb-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
                 <p class="font-semibold">Please check the highlighted fields to continue.</p>
                 <ul class="mt-2 list-inside list-disc space-y-1">
-                    @foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+                    @foreach (array_unique($errors->all()) as $error)<li>{{ $error }}</li>@endforeach
                 </ul>
             </div>
         @endif
@@ -328,8 +328,7 @@
                                 <p x-cloak x-show="locationError" x-text="locationError" role="alert" class="mt-2 text-xs text-amber-700"></p>
                                 <button type="button" x-cloak x-show="marker && !addressLoading" @click="retryAddress" class="mt-2 text-xs font-semibold text-blue-700 underline">Look up this pin again</button>
                             </div>
-                            <x-input-error :messages="$errors->get('latitude')" class="mt-2" />
-                            <x-input-error :messages="$errors->get('longitude')" class="mt-2" />
+                            <x-input-error :messages="array_unique(array_merge($errors->get('latitude'), $errors->get('longitude')))" class="mt-2" />
 
                         </div>
                     </section>

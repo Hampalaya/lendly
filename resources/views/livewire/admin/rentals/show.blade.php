@@ -150,7 +150,7 @@
                             @if ($rental->payment)
                                 <p class="mt-4 break-words text-sm text-slate-600">Payment reference: {{ $rental->payment->transaction_reference }}</p>
                                 <p class="mt-1 text-sm text-slate-600">Recorded payment: ₱{{ number_format($rental->payment->amount, 2) }} · {{ ucfirst($rental->payment->status) }}</p>
-                                <p class="mt-1 text-sm text-slate-600">Paid on {{ $rental->payment->paid_at?->format('M d, Y g:i A') ?? 'Not recorded' }}</p>
+                                <p class="mt-1 text-sm text-slate-600">Paid on {{ $rental->payment->paid_at?->copy()->setTimezone('Asia/Manila')->format('M d, Y g:i A') ?? 'Not recorded' }} (Philippine time)</p>
                             @else
                                 <p class="mt-4 text-sm text-slate-500">No payment recorded.</p>
                             @endif

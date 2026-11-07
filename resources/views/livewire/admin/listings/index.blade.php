@@ -27,7 +27,7 @@
                             <span class="text-xs text-slate-600">&#8369;{{ number_format($listing->allows_daily_rentals ? $listing->price_per_day : $listing->price_per_hour, 2) }}/{{ $listing->allows_daily_rentals ? 'day' : 'hour' }} &middot; {{ $listing->location }}</span>
                         </div>
                         <p class="mt-1 text-xs text-slate-500">Listed by {{ $listing->owner->name }} ({{ $listing->owner->email }})</p>
-                        @if ($listing->status->value === 'rejected' && $listing->rejection_reason)
+                        @if ($listing->rejection_reason)
                             <p class="mt-1 text-xs text-rose-600">Reason: {{ $listing->rejection_reason }}</p>
                         @endif
 
@@ -37,7 +37,7 @@
                                 <x-record-action icon="check" label="Approve Listing" tone="success" aria-label="Approve {{ $listing->name }}" wire:click="approve({{ $listing->id }})" wire:loading.attr="disabled" wire:target="approve({{ $listing->id }}), startRejecting({{ $listing->id }}), confirmReject" />
                                 <x-record-action icon="x-mark" label="Reject Listing" tone="danger" aria-label="Reject {{ $listing->name }}" wire:click="startRejecting({{ $listing->id }})" wire:loading.attr="disabled" wire:target="approve({{ $listing->id }}), startRejecting({{ $listing->id }}), confirmReject" />
                             @elseif ($listing->status->value === 'published')
-                                <x-record-action icon="trash" label="Remove Listing" tone="danger" aria-label="Remove {{ $listing->name }}" wire:click="remove({{ $listing->id }})" wire:confirm="Remove this listing from the marketplace?" wire:loading.attr="disabled" wire:target="remove({{ $listing->id }})" />
+                                <x-record-action icon="trash" label="Remove Listing" tone="danger" aria-label="Remove {{ $listing->name }}" wire:click="remove({{ $listing->id }})" wire:loading.attr="disabled" wire:target="remove({{ $listing->id }})" />
                             @endif
                         </x-slot:actions>
 
@@ -63,4 +63,19 @@
             <div class="mt-4">{{ $listings->links() }}</div>
         @endif
     </div>
+    @if ($removing)
+        <dialog wire:key="listing-removal-{{ $removing }}" wire:ignore.self x-data x-init="$el.showModal()" x-on:close="$wire.cancelRemoving()" aria-labelledby="listing-removal-title" aria-describedby="listing-removal-description" class="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-2xl border-0 bg-white p-6 text-slate-900 shadow-xl backdrop:bg-slate-900/50">
+            <h2 id="listing-removal-title" class="text-lg font-bold">Remove published listing</h2>
+            <p id="listing-removal-description" class="mt-2 text-sm leading-6 text-slate-600">Explain why this listing is being removed from the marketplace. The owner will see this reason. Existing bookings and transaction history are retained.</p>
+            <form wire:submit="confirmRemoval" class="mt-5 space-y-3">
+                <x-input-label required for="listing-removal-reason" value="Reason for removal" />
+                <textarea id="listing-removal-reason" wire:model="removal_reason" required maxlength="255" rows="3" class="w-full rounded-lg border-slate-300" autofocus></textarea>
+                <x-input-error :messages="$errors->get('removal_reason')" />
+                <div class="flex flex-wrap justify-end gap-3 pt-3">
+                    <x-secondary-button type="button" wire:click="cancelRemoving">Cancel</x-secondary-button>
+                    <x-primary-button wire:loading.attr="disabled" wire:target="confirmRemoval">Confirm removal</x-primary-button>
+                </div>
+            </form>
+        </dialog>
+    @endif
 </div>
