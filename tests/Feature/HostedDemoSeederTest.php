@@ -30,7 +30,8 @@ class HostedDemoSeederTest extends TestCase
     public function test_confirmed_hosted_seed_is_repeatable_and_has_no_known_password_or_financial_records(): void
     {
         $this->app->instance('env', 'production');
-        $this->artisan('demo:seed-hosted', ['--apply' => true, '--confirm-production' => true])->assertSuccessful();
+        $this->artisan('demo:seed-hosted', ['--apply' => true, '--confirm-production' => true])
+            ->expectsOutputToContain('Hosted demo records: 100 members, 250 listings')->assertSuccessful();
         $this->assertDatabaseCount('users', 100);
         $this->assertDatabaseCount('listings', 250);
         $this->assertDatabaseCount('listing_images', 250);

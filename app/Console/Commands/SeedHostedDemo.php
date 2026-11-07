@@ -44,8 +44,10 @@ class SeedHostedDemo extends Command
             return self::FAILURE;
         }
 
-        $members = User::withTrashed()->where('identity_reference', HostedMarketplaceSeeder::REFERENCE);
-        $count = Listing::withTrashed()->whereIn('owner_id', (clone $members)->select('id'))->where('name', 'like', 'Demo Item %')->count();
+        // Encrypted identity references cannot be compared in a SQL predicate.
+        $members = User::withTrashed()->where('email', 'like', 'hosted.demo%@tala.test')->get()
+            ->filter(fn (User $user) => $user->identity_reference === HostedMarketplaceSeeder::REFERENCE);
+        $count = Listing::withTrashed()->whereIn('owner_id', $members->modelKeys())->where('name', 'like', 'Demo Item %')->count();
         $this->info('Hosted demo records: '.$members->count().' members, '.$count.' listings (including existing/soft-deleted fixtures).');
         $this->line('Inactive or edited existing demo members are not reactivated; their missing listings may be skipped.');
         if ($credentials) {
