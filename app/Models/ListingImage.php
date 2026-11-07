@@ -20,6 +20,10 @@ class ListingImage extends Model
 
     public function url(): string
     {
+        if ($this->path === 'hosted-demo-placeholder') {
+            return asset('images/hosted-demo-placeholder.svg');
+        }
+
         return asset('storage/'.$this->path);
     }
 }

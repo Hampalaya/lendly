@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#eff6ff"/>
+  <rect x="260" y="110" width="280" height="240" rx="28" fill="#dbeafe"/>
+  <path d="m400 155 95 53v104l-95 53-95-53V208l95-53Zm-95 53 95 53 95-53M400 261v104" fill="none" stroke="#2563eb" stroke-width="12" stroke-linejoin="round"/>
+  <text x="400" y="430" text-anchor="middle" font-family="Arial,sans-serif" font-size="36" font-weight="700" fill="#1e3a8a">Lendly demo item</text>
+  <text x="400" y="480" text-anchor="middle" font-family="Arial,sans-serif" font-size="23" fill="#475569">Placeholder photo for demonstration</text>
+</svg>

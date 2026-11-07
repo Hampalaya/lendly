@@ -22,7 +22,14 @@ class BulkDemoSeeder extends DemoSeeder
 
         $categories = Category::whereNotNull('parent_id')->orderBy('id')->get();
         $conditions = ListingCondition::cases();
-        $locations = ['Batangas City', 'Lipa City', 'Tanauan City', 'Malvar', 'Santo Tomas', 'Nasugbu'];
+        $locations = [
+            ['Batangas City', 13.7565, 121.0583],
+            ['Lipa City', 13.9411, 121.1622],
+            ['Tanauan City', 14.0866, 121.1497],
+            ['Malvar', 14.0522, 121.1583],
+            ['Santo Tomas', 14.1078, 121.1414],
+            ['Nasugbu', 14.0722, 120.6317],
+        ];
 
         $target = 250;
 
@@ -33,6 +40,7 @@ class BulkDemoSeeder extends DemoSeeder
                 continue;
             }
             $price = 150 + (($i * 73) % 1800);
+            [$location, $latitude, $longitude] = $locations[($i - 1) % count($locations)];
 
             $listing = Listing::create([
                 'owner_id' => $owner->id,
@@ -46,9 +54,9 @@ class BulkDemoSeeder extends DemoSeeder
                 'price_per_day' => $price,
                 'price_per_week' => $price * 5,
                 'security_deposit' => $price * 2,
-                'location' => $locations[($i - 1) % count($locations)],
-                'latitude' => 13.75 + (($i % 30) / 100),
-                'longitude' => 121.05 + (($i % 30) / 100),
+                'location' => $location,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
                 'max_rental_duration_days' => 3 + ($i % 12),
                 'pickup_available' => true,
                 'delivery_available' => $i % 3 === 0,

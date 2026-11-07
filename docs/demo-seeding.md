@@ -2,6 +2,26 @@
 
 Updated 7 November 2026. By default, demo seeders run only when `APP_ENV` is `local` or `testing`. A command-scoped override is available for an intentional deployed demo (see below). They add synthetic accounts, listings and examples; they do not import another installation's database or uploaded photos.
 
+## Explicit hosted demonstration dataset
+
+The ordinary seeders remain disabled in production unless the separate process-scoped override below is used. For the requested 100-member, 250-listing public demo, prefer this dedicated command with random credentials and bundled placeholder images. Deploy it and run its preview inside the Lendly application container:
+
+```sh
+php artisan demo:seed-hosted
+```
+
+After reviewing the environment and dataset, apply it explicitly:
+
+```sh
+php artisan demo:seed-hosted --apply --confirm-production
+```
+
+This separate command creates up to 100 synthetic members (`hosted.demo1@tala.test` through `hosted.demo100@tala.test`) and 250 clearly labelled listings, with location pins at their named city centres. It creates no administrators, bookings, payments or financial history. New synthetic members receive demonstration verification so their items can be used in the rental demo. Each gets a random password that is neither displayed nor the local seeders' shared `password`; these are fixture owners, not public shared-login accounts. The `hosted-marketplace-demo-v1` reference identifies members belonging to this dataset.
+
+The preview does not write records. Applying requires both flags, wraps all database writes in a transaction, and preserves matching existing records. An existing target email without this fixture's reference aborts the operation and rolls back the changes. Existing inactive or edited members are not reactivated to fill missing listings. The normal `db:seed --class=HostedMarketplaceSeeder` invocation is refused; only the explicit command enables this dataset.
+
+Hosted placeholder images are bundled with the app at `public/images/hosted-demo-placeholder.svg`. They are served independently of an ephemeral upload directory and remain available after redeployment. Regular user-upload URLs retain their existing behavior. No migrations or changes to `APP_ENV` are needed for the hosted command. Run it inside the deployed application container so it uses that installation's database; a local test run does not seed Railway.
+
 ## Normal local setup
 
 Configure an existing empty MySQL database in `.env`, then run these commands from the project directory:
