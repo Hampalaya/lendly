@@ -17,13 +17,22 @@ class HostedMarketplaceSeeder extends BulkDemoSeeder
 
     private bool $confirmed = false;
 
-    public function seedConfirmed(): void
+    private int $credentialLimit = 0;
+
+    private array $newCredentials = [];
+
+    public function seedConfirmed(int $credentialLimit = 0): array
     {
+        $this->credentialLimit = max(0, min(10, $credentialLimit));
+        $this->newCredentials = [];
         $this->confirmed = true;
         try {
             $this->run();
+
+            return $this->newCredentials;
         } finally {
             $this->confirmed = false;
+            $this->newCredentials = [];
         }
     }
 
@@ -44,12 +53,17 @@ class HostedMarketplaceSeeder extends BulkDemoSeeder
         }
 
         // Do not expose the local seeders' well-known password on a public app.
-        $attributes['password'] = Str::random(64);
+        $attributes['password'] = Str::random(24);
         $attributes['name'] = 'Hosted '.$attributes['name'];
         $attributes['role'] = UserRole::Member;
         $attributes['identity_reference'] = self::REFERENCE;
 
-        return User::unguarded(fn () => parent::demoUser($attributes, $identityVerified));
+        $user = User::unguarded(fn () => parent::demoUser($attributes, $identityVerified));
+        if ($user->wasRecentlyCreated && count($this->newCredentials) < $this->credentialLimit) {
+            $this->newCredentials[] = [$user->email, $attributes['password']];
+        }
+
+        return $user;
     }
 
     protected function attachDemoImage(Listing $listing): void

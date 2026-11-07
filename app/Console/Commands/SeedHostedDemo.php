@@ -13,14 +13,15 @@ class SeedHostedDemo extends Command
 {
     protected $signature = 'demo:seed-hosted
         {--apply : Create the 100 demo members and up to 250 demo listings}
-        {--confirm-production : Explicitly approve this synthetic dataset on a hosted application}';
+        {--confirm-production : Explicitly approve this synthetic dataset on a hosted application}
+        {--show-new-credentials=0 : Print passwords for up to 10 newly created demo members after a successful commit}';
 
     protected $description = 'Preview or explicitly create the hosted marketplace demonstration dataset';
 
     public function handle(): int
     {
         $this->info('Hosted demo: 100 synthetic members and up to 250 labelled listings.');
-        $this->line('New members have synthetic verification for demonstration and unexposed random passwords. No admins, bookings or payments are created.');
+        $this->line('New members have synthetic verification for demonstration and random passwords. No admins, bookings or payments are created.');
         $this->line('Existing accounts, listings, passwords and transactions are preserved.');
         $this->line('Environment: '.app()->environment());
         if (! $this->option('apply')) {
@@ -35,7 +36,7 @@ class SeedHostedDemo extends Command
         }
 
         try {
-            DB::transaction(fn () => app(HostedMarketplaceSeeder::class)->seedConfirmed());
+            $credentials = DB::transaction(fn () => app(HostedMarketplaceSeeder::class)->seedConfirmed((int) $this->option('show-new-credentials')));
         } catch (Throwable $exception) {
             report($exception);
             $this->error('Hosted demo seeding failed and database changes were rolled back. Check the application log for details.');
@@ -47,6 +48,10 @@ class SeedHostedDemo extends Command
         $count = Listing::withTrashed()->whereIn('owner_id', (clone $members)->select('id'))->where('name', 'like', 'Demo Item %')->count();
         $this->info('Hosted demo records: '.$members->count().' members, '.$count.' listings (including existing/soft-deleted fixtures).');
         $this->line('Inactive or edited existing demo members are not reactivated; their missing listings may be skipped.');
+        if ($credentials) {
+            $this->warn('New demo logins: save these privately. Existing passwords are never displayed or reset.');
+            $this->table(['Email', 'Password'], $credentials);
+        }
 
         return self::SUCCESS;
     }

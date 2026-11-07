@@ -81,6 +81,20 @@ class HostedDemoSeederTest extends TestCase
         }
     }
 
+    public function test_requested_credentials_only_belong_to_new_accounts_and_are_not_reset_on_repeat(): void
+    {
+        $this->app->instance('env', 'production');
+        $credentials = DB::transaction(fn () => app(HostedMarketplaceSeeder::class)->seedConfirmed(3));
+        $this->assertCount(3, $credentials);
+        foreach ($credentials as [$email, $password]) {
+            $this->assertTrue(Hash::check($password, User::where('email', $email)->firstOrFail()->password));
+        }
+        $this->assertSame([], DB::transaction(fn () => app(HostedMarketplaceSeeder::class)->seedConfirmed(3)));
+        foreach ($credentials as [$email, $password]) {
+            $this->assertTrue(Hash::check($password, User::where('email', $email)->firstOrFail()->password));
+        }
+    }
+
     public function test_normal_upload_image_paths_keep_their_existing_url(): void
     {
         $image = new ListingImage(['path' => 'listings/example.jpg']);
