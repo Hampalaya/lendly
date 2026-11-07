@@ -101,4 +101,23 @@ class HostedDemoSeederTest extends TestCase
         $image = new ListingImage(['path' => 'listings/example.jpg']);
         $this->assertSame(asset('storage/listings/example.jpg'), $image->url());
     }
+
+    public function test_name_correction_preserves_credentials_verification_and_custom_names(): void
+    {
+        app(HostedMarketplaceSeeder::class)->seedConfirmed();
+        $member = User::where('email', 'hosted.demo2@tala.test')->firstOrFail();
+        DB::table('users')->where('id', $member->id)->update(['name' => 'Hosted Demo Member 2']);
+        $before = $member->fresh()->getRawOriginal();
+        $this->artisan('demo:name-hosted')->expectsOutputToContain('Would rename 1')->assertSuccessful();
+        $this->assertSame('Hosted Demo Member 2', $member->fresh()->name);
+        $this->artisan('demo:name-hosted', ['--apply' => true])->expectsOutputToContain('Renamed 1')->assertSuccessful();
+        $this->assertSame('Sofia Santos', $member->fresh()->name);
+        foreach (['password', 'email', 'identity_reference', 'identity_verified_at', 'identity_verification_environment'] as $field) {
+            $this->assertSame($before[$field], $member->fresh()->getRawOriginal($field));
+        }
+        DB::table('users')->where('id', $member->id)->update(['name' => 'My chosen name']);
+        $this->artisan('demo:name-hosted', ['--apply' => true])->expectsOutputToContain('Renamed 0')->assertSuccessful();
+        $this->assertSame('My chosen name', $member->fresh()->name);
+        $this->assertCount(100, collect(range(1, 100))->map(fn ($n) => HostedMarketplaceSeeder::memberName($n))->unique());
+    }
 }

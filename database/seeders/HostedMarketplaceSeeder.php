@@ -15,6 +15,14 @@ class HostedMarketplaceSeeder extends BulkDemoSeeder
 
     public const IMAGE = 'hosted-demo-placeholder';
 
+    public static function memberName(int $number): string
+    {
+        $first = ['Miguel', 'Sofia', 'Gabriel', 'Isabella', 'Joshua', 'Andrea', 'Paolo', 'Camille', 'Rafael', 'Bianca'];
+        $last = ['Santos', 'Reyes', 'Cruz', 'Garcia', 'Mendoza', 'Ramos', 'Torres', 'Flores', 'Villanueva', 'Castillo'];
+
+        return $first[($number - 1) % 10].' '.$last[intdiv($number - 1, 10) % 10];
+    }
+
     private bool $confirmed = false;
 
     private int $credentialLimit = 0;
@@ -54,7 +62,8 @@ class HostedMarketplaceSeeder extends BulkDemoSeeder
 
         // Do not expose the local seeders' well-known password on a public app.
         $attributes['password'] = Str::random(24);
-        $attributes['name'] = 'Hosted '.$attributes['name'];
+        preg_match('/demo(\d+)@/', $attributes['email'], $match);
+        $attributes['name'] = self::memberName((int) $match[1]);
         $attributes['role'] = UserRole::Member;
         $attributes['identity_reference'] = self::REFERENCE;
 
