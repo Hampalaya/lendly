@@ -1,0 +1,599 @@
+{
+  "fr": [
+    {
+      "id": "FR-01",
+      "title": "Registration as Owner and/or Renter",
+      "status": "Implemented",
+      "finding": "Name, unique email and password registration creates a member account that can list and rent. This satisfies dual capability; role selection is separately assessed under FR-03.",
+      "evidence": "resources/views/livewire/pages/auth/register.blade.php:27; app/Models/User.php:86"
+    },
+    {
+      "id": "FR-02",
+      "title": "Email verification before full access",
+      "status": "Partial",
+      "finding": "Signed email verification and verified-route restrictions exist, but this workspace uses MAIL_MAILER=log, so confirmation messages are logged rather than delivered to users.",
+      "evidence": "app/Models/User.php:17; routes/auth.php:34; routes/web.php:42; config/mail.php:17; .env (mailer setting only)"
+    },
+    {
+      "id": "FR-03",
+      "title": "Login and logout with role selection at every login",
+      "status": "Partial",
+      "finding": "Authentication, logout, throttling and session regeneration exist. Owner/Renter selection is absent; members can access both areas and see a merged dashboard. The existing role test explicitly expects this contrary behavior.",
+      "evidence": "resources/views/livewire/pages/auth/login.blade.php:21; app/Livewire/Forms/LoginForm.php:38; app/Models/User.php:86; app/Livewire/Member/Dashboard.php:23; tests/Feature/RoleAccessTest.php:23"
+    },
+    {
+      "id": "FR-04",
+      "title": "Forgotten password recovery through verified email",
+      "status": "Partial",
+      "finding": "Token-based email password reset is implemented and tested, but the current log mailer does not deliver the recovery message. Actual inbox delivery remains unverified.",
+      "evidence": "resources/views/livewire/pages/auth/forgot-password.blade.php:22; resources/views/livewire/pages/auth/reset-password.blade.php:34; tests/Feature/Auth/PasswordResetTest.php:25"
+    },
+    {
+      "id": "FR-05",
+      "title": "Create an item listing",
+      "status": "Implemented",
+      "finding": "The owner form stores name, category, description, condition, rates, location, fulfillment and availability. Listings enter admin approval rather than publishing immediately; that is a B.2 process deviation.",
+      "evidence": "app/Livewire/Owner/Listings/Form.php:153; tests/Feature/ListingTest.php"
+    },
+    {
+      "id": "FR-06",
+      "title": "Upload one or more item photos",
+      "status": "Implemented",
+      "finding": "Multiple listing images can be uploaded and stored; image type and size are validated. Photos are optional, so B.2 does not enforce at least one image.",
+      "evidence": "app/Livewire/Owner/Listings/Form.php:177; app/Livewire/Owner/Listings/Form.php:203; tests/Feature/ListingTest.php"
+    },
+    {
+      "id": "FR-07",
+      "title": "Edit pause or remove a listing",
+      "status": "Partial",
+      "finding": "Editing, pausing, reactivation and soft deletion exist. After deletion, historical rentals and requests lose their normal listing relationship; audit probe confirmed this. Historical pages dereference that missing relationship.",
+      "evidence": "app/Livewire/Owner/Listings/Index.php:17; app/Livewire/Owner/Listings/Index.php:37; app/Models/Rental.php:77; app/Models/RentalRequest.php:54"
+    },
+    {
+      "id": "FR-08",
+      "title": "Update item availability status",
+      "status": "Partial",
+      "finding": "Owners can toggle a boolean availability flag and pause publication. Available, Reserved and Rented are not modeled as item availability states; payment and handover do not update an item state.",
+      "evidence": "app/Livewire/Owner/Listings/Form.php:64; app/Models/Listing.php:60; app/Enums/ListingStatus.php:5"
+    },
+    {
+      "id": "FR-09",
+      "title": "Search and filter available items",
+      "status": "Implemented",
+      "finding": "Browse supports keyword, category/subcategory, price, condition, brand and sorting, and excludes unpublished or unavailable listings.",
+      "evidence": "app/Livewire/Listings/Browse.php:59; tests/Feature/ListingSearchTest.php"
+    },
+    {
+      "id": "FR-10",
+      "title": "Complete item details and availability calendar",
+      "status": "Implemented",
+      "finding": "Details display images, description, rates, owner rating and a calendar based on approved booking ranges.",
+      "evidence": "app/Livewire/Listings/Show.php:30; resources/views/livewire/listings/show.blade.php; resources/js/calendar.js"
+    },
+    {
+      "id": "FR-11",
+      "title": "Request an available item for a rental period",
+      "status": "Partial",
+      "finding": "Date, maximum-duration, fulfillment, self-rental and overlap checks exist. Availability is checked at initial mount only; a request can still be submitted after the owner makes the item unavailable, confirmed by an audit probe.",
+      "evidence": "app/Livewire/RentalRequests/Create.php:31; app/Livewire/RentalRequests/Create.php:77"
+    },
+    {
+      "id": "FR-12",
+      "title": "Owner reviews approves or declines requests",
+      "status": "Implemented",
+      "finding": "Owners can review their requests, approve with terms acceptance, or reject with a reason. Ownership authorization and an overlap check exist. Concurrent approvals remain a NFR-01/03 risk.",
+      "evidence": "app/Livewire/Owner/RentalRequests/Index.php:41; app/Livewire/Owner/RentalRequests/Index.php:119; tests/Feature/RentalRequestTest.php"
+    },
+    {
+      "id": "FR-13",
+      "title": "Notify both parties of request status",
+      "status": "Partial",
+      "finding": "Submission notifies the owner, and approval or rejection notifies the renter. The owner receives no approval/decline status notification; pending status is shown in the UI rather than notified to both.",
+      "evidence": "app/Livewire/RentalRequests/Create.php:130; app/Livewire/Owner/RentalRequests/Index.php:82; app/Livewire/Owner/RentalRequests/Index.php:134"
+    },
+    {
+      "id": "FR-14",
+      "title": "Confirmed booking after approval and accepted terms",
+      "status": "Partial",
+      "finding": "Owner approval creates a booking awaiting payment, but approval does not require a recorded renter acceptance timestamp. A pending request without renter acceptance was successfully booked in an audit probe.",
+      "evidence": "app/Livewire/Owner/RentalRequests/Index.php:41; app/Livewire/Owner/RentalRequests/Index.php:66"
+    },
+    {
+      "id": "FR-15",
+      "title": "Both parties accept terms including cancellation policy",
+      "status": "Partial",
+      "finding": "Both normal forms require acceptance and display cancellation rules. The approval action checks the owner's checkbox but never verifies renter_terms_accepted_at. Acceptance also occurs before/during approval rather than after approval as B.4 describes.",
+      "evidence": "resources/views/livewire/rental-requests/create.blade.php:72; resources/views/livewire/owner/rental-requests/index.blade.php:66; app/Livewire/Owner/RentalRequests/Index.php:41"
+    },
+    {
+      "id": "FR-16",
+      "title": "Automatically calculate rental cost",
+      "status": "Implemented",
+      "finding": "Inclusive rental days multiplied by the daily rate determine rental fees; commission and deposit are separately added and amounts rounded. Existing tests cover the calculation.",
+      "evidence": "app/Livewire/RentalRequests/Create.php:45; app/Livewire/RentalRequests/Create.php:57; app/Livewire/RentalRequests/Create.php:72; tests/Feature/PaymentTest.php"
+    },
+    {
+      "id": "FR-17",
+      "title": "Record payments and generate receipts for both parties",
+      "status": "Partial",
+      "finding": "Payment records and a renter receipt with transaction reference exist. The owner page displays an earnings breakdown, without the payment receipt or transaction reference. The existing test named for both-party receipts only asserts the owner's earnings label.",
+      "evidence": "app/Livewire/Renter/Rentals/Show.php:58; resources/views/livewire/renter/rentals/show.blade.php:385; resources/views/livewire/owner/rentals/show.blade.php:381; tests/Feature/PaymentTest.php"
+    },
+    {
+      "id": "FR-18",
+      "title": "Coordinate and confirm pickup or delivery",
+      "status": "Implemented",
+      "finding": "A fulfillment method is chosen during requesting; both participants can coordinate in the request chat and record pickup confirmations. Courier integration is explicitly outside scope. Automated schedule notices are assessed under B.6.",
+      "evidence": "app/Livewire/RentalRequests/Create.php:86; app/Livewire/Messages/Show.php:39; app/Services/RentalLifecycle.php:55"
+    },
+    {
+      "id": "FR-19",
+      "title": "Display real-time ongoing due-soon and overdue status",
+      "status": "Partial",
+      "finding": "Active Rental, derived Due Soon and Overdue states are displayed. Open screens do not poll or subscribe for another participant's changes; overdue updates depend on the daily scheduler, so real-time synchronization is incomplete.",
+      "evidence": "app/Models/Rental.php:188; app/Enums/RentalStatus.php:15; app/Services/RentalLifecycle.php:212; routes/console.php:12"
+    },
+    {
+      "id": "FR-20",
+      "title": "Automated due-date and overdue notifications",
+      "status": "Partial",
+      "finding": "Daily reminder and overdue commands exist and have tests. A running scheduler on the deployed server is not evidenced, and the daily cadence is the only automation configured.",
+      "evidence": "app/Services/RentalLifecycle.php:212; app/Services/RentalLifecycle.php:244; routes/console.php:12; tests/Feature/NotificationsAndChatTest.php"
+    },
+    {
+      "id": "FR-21",
+      "title": "Owner confirms return and records returned condition",
+      "status": "Implemented",
+      "finding": "Owner return confirmation, condition notes, images and damage details exist. Both parties must confirm return before condition recording, which adds a dependency beyond B.7.",
+      "evidence": "app/Livewire/Owner/Rentals/Show.php:88; app/Livewire/Owner/Rentals/Show.php:121; app/Policies/RentalPolicy.php:78; tests/Feature/ConditionAndDamageTest.php"
+    },
+    {
+      "id": "FR-22",
+      "title": "Close and archive confirmed returns",
+      "status": "Implemented",
+      "finding": "After both return confirmations and an after-condition record, the owner completes inspection; status and completed timestamp are stored and the rental remains in history. A separate archival store is not required by the document.",
+      "evidence": "app/Services/RentalLifecycle.php:73; app/Services/RentalLifecycle.php:89; app/Policies/RentalPolicy.php:68; tests/Feature/ConditionAndDamageTest.php"
+    },
+    {
+      "id": "FR-23",
+      "title": "Both parties rate and review each other after completion",
+      "status": "Partial",
+      "finding": "Post-completion rating/comment forms and duplicate prevention exist. Renter review actions lack a renter-id check; the owner can use the renter component to submit a renter-to-owner review of themselves, confirmed by an audit probe.",
+      "evidence": "app/Livewire/Renter/Rentals/Show.php:151; app/Livewire/Owner/Rentals/Show.php:183; app/Policies/RentalPolicy.php:11"
+    },
+    {
+      "id": "FR-24",
+      "title": "Complete booking and transaction history",
+      "status": "Partial",
+      "finding": "Role-specific rental lists include completed and cancelled bookings, and requests have their own list. Deleted listings lose their historical relationship; account deletion also cascades through rental/payment records, compromising retained counterpart history.",
+      "evidence": "app/Livewire/Owner/Rentals/Index.php:22; app/Livewire/Renter/Rentals/Index.php:18; app/Models/Rental.php:77; resources/views/livewire/profile/delete-user-form.blade.php:22; database/migrations/2026_09_06_171728_a_create_rentals_table.php:16"
+    },
+    {
+      "id": "FR-25",
+      "title": "Owner earnings and completed transactions summary",
+      "status": "Partial",
+      "finding": "Dashboard earnings, monthly charts and completed counts exist. Earnings include every rental with paid_at, including subsequently cancelled rentals, and do not reconcile refunded rentals or cancellation fees.",
+      "evidence": "app/Livewire/Member/Dashboard.php:47; app/Livewire/Member/Dashboard.php:133; resources/views/livewire/owner/rentals/show.blade.php:381"
+    },
+    {
+      "id": "FR-26",
+      "title": "Admin manages and suspends user accounts",
+      "status": "Implemented",
+      "finding": "Admin dashboard lists/searches users and supports suspension/reactivation; suspended sessions and login are blocked, and admin accounts are protected from suspension.",
+      "evidence": "app/Livewire/Admin/Dashboard.php:31; app/Http/Middleware/EnsureAccountIsActive.php:12; tests/Feature/RoleAccessTest.php"
+    },
+    {
+      "id": "FR-27",
+      "title": "Admin monitors and moderates listings",
+      "status": "Implemented",
+      "finding": "Admin can filter listings, approve, reject with a reason, or deactivate. Owner creation and edits are submitted for moderation.",
+      "evidence": "app/Livewire/Admin/Listings/Index.php:28; app/Livewire/Owner/Listings/Form.php:191; tests/Feature/ListingTest.php"
+    },
+    {
+      "id": "FR-28",
+      "title": "Admin views and manages all rental transactions",
+      "status": "Partial",
+      "finding": "Admin transaction listing supports search, status filters and totals. The component contains no transaction management actions or complete detail/receipt investigation view; the admin rental policy permits viewing but the member routes exclude admin.",
+      "evidence": "app/Livewire/Admin/Rentals/Index.php:34; routes/web.php:85; tests/Feature/AdminTransactionsTest.php"
+    },
+    {
+      "id": "FR-29",
+      "title": "Owner or renter files transaction report or dispute",
+      "status": "Implemented",
+      "finding": "Both parties can submit a transaction dispute with reason and description; damage claims also support renter disagreement. Standalone listing/user reports and general evidence attachments are absent, assessed as B.9 gaps.",
+      "evidence": "app/Livewire/Owner/Rentals/Show.php:204; app/Livewire/Renter/Rentals/Show.php:191; tests/Feature/ReviewsAndDisputeTest.php"
+    },
+    {
+      "id": "FR-30",
+      "title": "Admin reviews investigates and resolves disputes",
+      "status": "Implemented",
+      "finding": "Admin can review descriptions, participants, linked damage evidence and resolve with notes. Damage resolutions update claim/deposit records; general refund decisions are recommendations without automatic money movement, consistent with gateway exclusion.",
+      "evidence": "app/Livewire/Admin/Disputes/Index.php:42; resources/views/livewire/admin/disputes/index.blade.php:39; app/Services/RentalLifecycle.php:158; tests/Feature/ReviewsAndDisputeTest.php"
+    },
+    {
+      "id": "FR-31",
+      "title": "Direct messaging about a listing or transaction",
+      "status": "Partial",
+      "finding": "Participant messaging works after a rental request exists. There is no listing-only inquiry or way to start a chat before making a request.",
+      "evidence": "routes/web.php:52; app/Livewire/Messages/Show.php:26; app/Models/Message.php"
+    },
+    {
+      "id": "FR-32",
+      "title": "Conversation threads and new-message notifications",
+      "status": "Implemented",
+      "finding": "Messages belong to request threads and each send stores a recipient notification. Inbox previews, unread counts and read marks exist; instant delivery to an already open screen is not implemented.",
+      "evidence": "app/Livewire/Messages/Show.php:39; app/Livewire/Messages/Concerns/ListsThreads.php:15; tests/Feature/NotificationsAndChatTest.php; tests/Feature/MessagesInboxTest.php"
+    },
+    {
+      "id": "FR-33",
+      "title": "Complete message history with another participant",
+      "status": "Implemented",
+      "finding": "Each request thread retrieves all its messages; users can open historical conversations from the inbox. Conversations are organized per rental request rather than combined per person.",
+      "evidence": "app/Models/RentalRequest.php:69; app/Livewire/Messages/Show.php:30; resources/views/livewire/messages/show.blade.php:24"
+    },
+    {
+      "id": "FR-34",
+      "title": "Cancellation only before handover",
+      "status": "Partial",
+      "finding": "Booking cancellation is available in payment-pending/paid states, but it remains available after the owner has recorded handover if the renter has not confirmed receipt. The request-list cancellation action also cancels approved requests without cancelling their booking.",
+      "evidence": "app/Models/Rental.php:215; app/Models/RentalRequest.php:95; app/Livewire/Renter/RentalRequests/Index.php:17; app/Services/RentalLifecycle.php:30"
+    },
+    {
+      "id": "FR-35",
+      "title": "Calculate and apply timing-based cancellation fees",
+      "status": "Partial",
+      "finding": "The booking cancellation path computes 20% within 48 hours and records the fee. Approved-request cancellation bypasses this path and records no fee. Fee settlement/payment adjustments are not recorded separately.",
+      "evidence": "app/Services/CancellationPolicy.php:15; app/Services/RentalLifecycle.php:30; app/Livewire/Renter/RentalRequests/Index.php:17"
+    },
+    {
+      "id": "FR-36",
+      "title": "Cancellation notifies owner and updates availability",
+      "status": "Partial",
+      "finding": "Booking cancellation notifies the owner and releases approved date overlap. Request-list cancellation does not notify the owner or synchronize the booking; no explicit item availability-state update occurs.",
+      "evidence": "app/Services/RentalLifecycle.php:39; app/Services/RentalLifecycle.php:43; app/Livewire/Renter/RentalRequests/Index.php:17"
+    },
+    {
+      "id": "FR-37",
+      "title": "Cancellation reason and fees in both parties history",
+      "status": "Partial",
+      "finding": "Booking cancellation persists reason, timestamp and fee for both rental views. Request cancellations persist only the request status, without cancellation metadata or corresponding booking-history update.",
+      "evidence": "app/Services/RentalLifecycle.php:32; resources/views/livewire/owner/rentals/show.blade.php:92; app/Livewire/Renter/RentalRequests/Index.php:17"
+    },
+    {
+      "id": "FR-38",
+      "title": "Update picture name address email password and phone",
+      "status": "Implemented",
+      "finding": "Profile forms support all listed fields, avatar upload/removal and password updates. Changing email invalidates its verified flag. Existing tests cover name/email, phone/address and avatar behavior.",
+      "evidence": "resources/views/livewire/profile/update-profile-information-form.blade.php:38; resources/views/livewire/profile/update-password-form.blade.php; tests/Feature/ProfileTest.php"
+    },
+    {
+      "id": "FR-39",
+      "title": "Secure admin login and logout",
+      "status": "Implemented",
+      "finding": "The shared login validates administrator credentials and redirects admins to their dashboard. Admin/member route separation, rate limits, suspension checks and logout session invalidation are present.",
+      "evidence": "app/Livewire/Forms/LoginForm.php:38; app/Models/User.php:106; app/Livewire/Actions/Logout.php; routes/web.php:85"
+    },
+    {
+      "id": "FR-40",
+      "title": "Booking confirmation notifications to both parties",
+      "status": "Partial",
+      "finding": "Approval sends a confirmation/approved notification to the renter only. There is no corresponding owner booking confirmation; an audit probe confirmed zero owner notifications after approval.",
+      "evidence": "app/Livewire/Owner/RentalRequests/Index.php:82"
+    },
+    {
+      "id": "FR-41",
+      "title": "Renter pays a confirmed booking using supported method",
+      "status": "Implemented",
+      "finding": "The declared supported method is a clearly labelled simulated payment. It creates payment/deposit records and marks the booking paid. This meets the document's payment-recording scope; real collection is not implemented and live gateways are explicitly excluded.",
+      "evidence": "app/Livewire/Renter/Rentals/Show.php:58; resources/views/livewire/renter/rentals/show.blade.php:84; resources/views/livewire/renter/rentals/show.blade.php:107; tests/Feature/PaymentTest.php"
+    },
+    {
+      "id": "FR-42",
+      "title": "Item becomes Reserved after payment for booking dates",
+      "status": "Partial",
+      "finding": "Approved requests block overlapping dates, providing partial reservation behavior before payment. Payment sets rental status Paid, while item availability/status remains unchanged; no Reserved state is displayed or stored.",
+      "evidence": "app/Models/Listing.php:135; app/Livewire/Renter/Rentals/Show.php:74; app/Enums/ListingStatus.php:5"
+    },
+    {
+      "id": "FR-43",
+      "title": "Owner logs handover and renter logs receipt",
+      "status": "Implemented",
+      "finding": "Independent owner/renter pickup timestamps and buttons record the two acknowledgements. They are labelled pickup confirmations rather than the document's exact Handed Over/Received wording.",
+      "evidence": "app/Services/RentalLifecycle.php:55; app/Policies/RentalPolicy.php:28; tests/Feature/RentalLifecycleTest.php"
+    },
+    {
+      "id": "FR-44",
+      "title": "Rental becomes ongoing after handover",
+      "status": "Implemented",
+      "finding": "After both pickup acknowledgements the rental becomes Active, displayed as Active Rental, which is the implementation's equivalent of Ongoing. An owner-only handover does not activate it; clarify the requirement if one acknowledgement is intended.",
+      "evidence": "app/Services/RentalLifecycle.php:65; app/Enums/RentalStatus.php:24; tests/Feature/RentalLifecycleTest.php"
+    },
+    {
+      "id": "FR-45",
+      "title": "Prompt both parties and publish reviews on public profiles",
+      "status": "Partial",
+      "finding": "Both rental detail pages have optional review forms and the renter receives a completion prompt. The owner receives no completion review notification, and there is no public user profile route publishing each user review.",
+      "evidence": "app/Services/RentalLifecycle.php:102; resources/views/livewire/owner/rentals/show.blade.php:309; resources/views/livewire/renter/rentals/show.blade.php:287; routes/web.php"
+    },
+    {
+      "id": "FR-46",
+      "title": "Notify involved parties of dispute resolution",
+      "status": "Implemented",
+      "finding": "Resolving a dispute records the decision and sends database notifications to both renter and owner.",
+      "evidence": "app/Services/RentalLifecycle.php:158; app/Services/RentalLifecycle.php:198; tests/Feature/ReviewsAndDisputeTest.php"
+    },
+    {
+      "id": "FR-47",
+      "title": "Owner sets listing location for map",
+      "status": "Implemented",
+      "finding": "Address/location and optional latitude/longitude are supported; the map picker reports selected or permission-granted device coordinates.",
+      "evidence": "app/Livewire/Owner/Listings/Form.php:170; resources/js/map.js:18; resources/js/map.js:48"
+    },
+    {
+      "id": "FR-48",
+      "title": "Available listings as interactive map pins",
+      "status": "Implemented",
+      "finding": "Leaflet displays published, available listings having coordinates as pins with interactive popups. Listings without coordinates remain available in the normal browse view.",
+      "evidence": "app/Livewire/Listings/Map.php:35; resources/js/map.js:78; tests/Feature/ListingSearchTest.php:126"
+    },
+    {
+      "id": "FR-49",
+      "title": "Permission-based location centers map and marks renter",
+      "status": "Implemented",
+      "finding": "Use my location invokes browser geolocation on user action, centers the map and places a position marker. Permission behavior uses the browser API; actual browser testing was not performed.",
+      "evidence": "resources/js/map.js:125; resources/views/livewire/listings/map.blade.php:32"
+    },
+    {
+      "id": "FR-50",
+      "title": "Selected distance radius filters map listings",
+      "status": "Partial",
+      "finding": "5/10/25/50 km controls and distance filtering exist. Falsy coordinate checks treat a valid latitude or longitude of zero as absent, disabling the filter; zero latitude was confirmed in an audit probe.",
+      "evidence": "app/Livewire/Listings/Map.php:54; app/Livewire/Listings/Map.php:71; resources/views/livewire/listings/map.blade.php:43"
+    },
+    {
+      "id": "FR-51",
+      "title": "Automatic nearest-to-farthest sorting",
+      "status": "Partial",
+      "finding": "Listings are sorted by computed distance when both coordinates are truthy. Valid zero coordinates disable distance calculation and sorting.",
+      "evidence": "app/Livewire/Listings/Map.php:54; app/Livewire/Listings/Map.php:75"
+    },
+    {
+      "id": "FR-52",
+      "title": "Map keyword and category filtering matches browse",
+      "status": "Implemented",
+      "finding": "Both components use the same name/description/brand keyword predicates and category/subcategory matching. Their code is duplicated, which is a future maintenance concern rather than a current behavioral mismatch.",
+      "evidence": "app/Livewire/Listings/Map.php:41; app/Livewire/Listings/Browse.php:65"
+    },
+    {
+      "id": "FR-53",
+      "title": "Map pin photo name price preview and detail opening",
+      "status": "Partial",
+      "finding": "Pins show name, daily price and distance with a View listing link. Image data is computed but never rendered in the popup. Pin selection opens the popup; another click follows the detail link.",
+      "evidence": "app/Livewire/Listings/Map.php:62; resources/js/map.js:101"
+    }
+  ],
+  "nfr": [
+    {
+      "id": "NFR-01",
+      "title": "Accurate synchronized statuses bookings and history",
+      "status": "Partial",
+      "finding": "Confirmed approved-request cancellation leaves a payable booking while freeing its dates; deleted listing relations break historical references. Approval/payment/lifecycle writes lack a database transaction and booking/payment uniqueness safeguards, creating additional untested concurrency/partial-failure risks.",
+      "evidence": "app/Livewire/Renter/RentalRequests/Index.php:17; app/Livewire/Owner/RentalRequests/Index.php:41; app/Livewire/Renter/Rentals/Show.php:58; database/migrations/2026_09_06_171728_a_create_rentals_table.php:13"
+    },
+    {
+      "id": "NFR-02",
+      "title": "Accurate rental and cancellation costs",
+      "status": "Partial",
+      "finding": "Normal inclusive-day rental and timing-based fee calculations exist. The alternate approved-request cancellation path bypasses fees, so correctness is not consistent across all cancellation entry points.",
+      "evidence": "app/Livewire/RentalRequests/Create.php:45; app/Services/CancellationPolicy.php:18; app/Livewire/Renter/RentalRequests/Index.php:17"
+    },
+    {
+      "id": "NFR-03",
+      "title": "Consistent availability bookings and payments across sessions",
+      "status": "Partial",
+      "finding": "Records are database-backed, but approval/pay actions have unprotected read-then-write sequences; approved-request cancellation desynchronizes them. Open rental/message screens lack cross-session automatic refresh. Race behavior was identified from source rather than stress-tested.",
+      "evidence": "app/Livewire/Owner/RentalRequests/Index.php:54; app/Livewire/Renter/Rentals/Show.php:58; resources/views/livewire/renter/rentals/show.blade.php; resources/views/livewire/messages/show.blade.php"
+    },
+    {
+      "id": "NFR-04",
+      "title": "Continuous availability and maintenance communication",
+      "status": "Unverified",
+      "finding": "No uptime measurements, deployed hosting checks or advance maintenance communication workflow were available. A local codebase and health endpoint cannot establish continuous availability.",
+      "evidence": "bootstrap/app.php:16; repository infrastructure files"
+    },
+    {
+      "id": "NFR-05",
+      "title": "Acceptable core-action response times",
+      "status": "Unverified",
+      "finding": "No normal-load definition, response-time target, benchmark or load-test result is provided. Functional tests do not establish response-time compliance.",
+      "evidence": "tests/Feature/ListingSearchTest.php; tests/Feature/RentalRequestTest.php; requirements NFR-05"
+    },
+    {
+      "id": "NFR-06",
+      "title": "Secure password hashing",
+      "status": "Implemented",
+      "finding": "Registration/reset use Hash and the User password cast is hashed; passwords are excluded from serialized attributes.",
+      "evidence": "resources/views/livewire/pages/auth/register.blade.php:36; app/Models/User.php:60; app/Models/User.php:74"
+    },
+    {
+      "id": "NFR-07",
+      "title": "Role-based access protects sensitive data",
+      "status": "Partial",
+      "finding": "Admin/member separation, participant ownership policies, suspension controls and verified access exist. Selected Owner/Renter session restriction is missing, and the owner can invoke renter review actions through an allowed participant-view route.",
+      "evidence": "app/Http/Middleware/EnsureUserHasRole.php:19; app/Models/User.php:86; app/Policies/RentalPolicy.php:11; app/Livewire/Renter/Rentals/Show.php:151"
+    },
+    {
+      "id": "NFR-08",
+      "title": "Consumer protection privacy and payment compliance",
+      "status": "Unverified",
+      "finding": "The platform displays basic terms and cancellation rules, but no named applicable standard, complete privacy notice, compliance assessment or legal acceptance evidence is provided. Technical features cannot certify this requirement.",
+      "evidence": "resources/views/livewire/rental-requests/create.blade.php:72; requirements NFR-08"
+    },
+    {
+      "id": "NFR-09",
+      "title": "Simple intuitive listing and booking workflows",
+      "status": "Unverified",
+      "finding": "Forms, navigation, cost summaries and validation exist. No user usability results or definition of minimal steps is supplied; the role mismatch and workflow deviations need acceptance review.",
+      "evidence": "resources/views/livewire/owner/listings/form.blade.php; resources/views/livewire/rental-requests/create.blade.php; resources/views/livewire/layout/sidebar.blade.php"
+    },
+    {
+      "id": "NFR-10",
+      "title": "Clear specific actionable errors",
+      "status": "Partial",
+      "finding": "Field-level errors and helpful business-rule messages are common. Geolocation failure is silently swallowed, unsupported geolocation can leave the view's locating state unresolved, and broken history references may produce server errors.",
+      "evidence": "app/Livewire/RentalRequests/Create.php:92; app/Livewire/Owner/Listings/Form.php:179; resources/js/map.js:125"
+    },
+    {
+      "id": "NFR-11",
+      "title": "Modular maintainable implementation",
+      "status": "Implemented",
+      "finding": "Models, enums, policies, middleware, Livewire modules, services, shared UI components and message-thread helpers separate responsibilities. Some transactional behavior is spread across components, but the required modular structure is present.",
+      "evidence": "app/Services; app/Policies; app/Http/Middleware; app/Livewire; resources/views/components"
+    },
+    {
+      "id": "NFR-12",
+      "title": "Growth without major redesign",
+      "status": "Unverified",
+      "finding": "Pagination exists for many lists, but the map loads every matching listing, dashboards aggregate collections in memory and chat-thread lists issue per-thread unread queries. No load/capacity evidence establishes growth compliance.",
+      "evidence": "app/Livewire/Listings/Map.php:50; app/Livewire/Member/Dashboard.php:55; app/Livewire/Messages/Concerns/ListsThreads.php:43"
+    },
+    {
+      "id": "NFR-13",
+      "title": "Automated backend frontend and manual validation",
+      "status": "Partial",
+      "finding": "A substantial PHPUnit/Livewire suite validates backend and rendered responses. No Selenium, Playwright or Dusk browser-workflow suite, Postman collection or completed manual execution log was found. Rendered response assertions do not exercise map JavaScript or actual browser interaction.",
+      "evidence": "phpunit.xml; tests; package.json; repository test inventory"
+    },
+    {
+      "id": "NFR-14",
+      "title": "Independently testable functions",
+      "status": "Implemented",
+      "finding": "Independent Geo unit tests and module-specific authentication, validation, lifecycle, cancellation, condition, history and notification tests exist.",
+      "evidence": "tests/Unit/GeoTest.php; tests/Feature/TermsAcceptanceTest.php; tests/Feature/CancellationTest.php; tests/Feature/RentalLifecycleTest.php"
+    },
+    {
+      "id": "NFR-15",
+      "title": "Browser compatibility and device responsiveness",
+      "status": "Unverified",
+      "finding": "Responsive Tailwind breakpoints are present, but no cross-browser/device execution evidence was available. Browser geolocation, map interaction and layout behavior were not tested in Chrome/Edge/mobile.",
+      "evidence": "resources/views/layouts; resources/views/livewire/listings/map.blade.php; resources/css/app.css"
+    },
+    {
+      "id": "NFR-16",
+      "title": "Email and map service interoperability",
+      "status": "Partial",
+      "finding": "SMTP/service mail adapters and map tile integration exist. This environment uses a log mailer rather than delivering emails. External map tile availability and actual email inbox delivery were not verified.",
+      "evidence": "config/mail.php:17; resources/js/map.js:22; resources/js/map.js:84; .env (mailer setting only)"
+    },
+    {
+      "id": "NFR-17",
+      "title": "Location only with user permission",
+      "status": "Implemented",
+      "finding": "Device location is requested through navigator.geolocation from explicit Use my location actions, subject to browser permission; no automatic location capture was found.",
+      "evidence": "resources/js/map.js:48; resources/js/map.js:125; resources/js/map.js:162"
+    },
+    {
+      "id": "NFR-18",
+      "title": "Acceptable map pin and filter response times",
+      "status": "Unverified",
+      "finding": "Reactive filters and a keyword debounce exist, but the map queries all matching listings and has no load/performance benchmark. Acceptable response time and normal load are undefined.",
+      "evidence": "app/Livewire/Listings/Map.php:33; resources/views/livewire/listings/map.blade.php:20; resources/js/map.js:101"
+    },
+    {
+      "id": "NFR-19",
+      "title": "Accurate distances and nearest-first order",
+      "status": "Partial",
+      "finding": "Haversine distance computation has unit tests and valid nonzero coordinates drive ordering. The component treats zero-valued coordinates as missing, so valid locations do not always receive distances or sorting.",
+      "evidence": "app/Support/Geo.php:12; tests/Unit/GeoTest.php; app/Livewire/Listings/Map.php:54"
+    },
+    {
+      "id": "NFR-20",
+      "title": "Browse and search without shared location",
+      "status": "Implemented",
+      "finding": "Normal browse has no location dependency. Map discovery without a location uses a default center and does not apply distance filtering or nearest-first sorting; only coordinate-bearing listings can appear as map pins.",
+      "evidence": "app/Livewire/Listings/Browse.php:59; app/Livewire/Listings/Map.php:54; resources/js/map.js:15"
+    }
+  ],
+  "flows": [
+    {
+      "id": "B.1",
+      "title": "Registration and login",
+      "status": "Partial",
+      "finding": "Registration, uniqueness validation, verification, reset and login exist. Current mail is logged; registration automatically signs in, verification redirects to the dashboard instead of the login page, and per-login Owner/Renter selection is absent.",
+      "related": "FR-01–04, FR-39",
+      "evidence": "resources/views/livewire/pages/auth/register.blade.php:40; app/Http/Controllers/Auth/VerifyEmailController.php:30"
+    },
+    {
+      "id": "B.2",
+      "title": "Item listing and management",
+      "status": "Partial",
+      "finding": "Listing creation, location, photos and edit/pause/removal exist. Available-date selection is not modeled, photos/coordinates are optional, and submissions/edits wait for admin approval instead of publishing after validation. Removal breaks history relations.",
+      "related": "FR-05–08, FR-47",
+      "evidence": "app/Livewire/Owner/Listings/Form.php:153; app/Livewire/Owner/Listings/Form.php:191; app/Models/Listing.php:135"
+    },
+    {
+      "id": "B.3",
+      "title": "Item search and map browsing",
+      "status": "Partial",
+      "finding": "Search, filters, details/calendar, pins, permission-based positioning and radii exist. Pin previews omit photos; valid zero coordinates disable distances/radius/order. List browsing has no location filter and live map behavior was not browser-tested.",
+      "related": "FR-09–10, FR-48–53",
+      "evidence": "app/Livewire/Listings/Browse.php; app/Livewire/Listings/Map.php:54; resources/js/map.js:101"
+    },
+    {
+      "id": "B.4",
+      "title": "Request approval and booking",
+      "status": "Partial",
+      "finding": "Request notification, approval/decline and booking generation exist. Renter accepts before submitting and owner during approval, rather than both after approval. Approval does not enforce recorded renter acceptance and only the renter gets booking confirmation.",
+      "related": "FR-11–16, FR-40",
+      "evidence": "app/Livewire/RentalRequests/Create.php:127; app/Livewire/Owner/RentalRequests/Index.php:41"
+    },
+    {
+      "id": "B.5",
+      "title": "Payment and transaction",
+      "status": "Partial",
+      "finding": "Cost computation and clearly labelled simulated payment produce records and a renter receipt. Owner receives an earnings breakdown instead of a receipt. Dates block on approval; item never becomes Reserved after payment. Live payment gateways are outside scope.",
+      "related": "FR-16–17, FR-41–42",
+      "evidence": "app/Livewire/Renter/Rentals/Show.php:58; app/Models/Listing.php:135; resources/views/livewire/owner/rentals/show.blade.php:381"
+    },
+    {
+      "id": "B.6",
+      "title": "Pickup or delivery",
+      "status": "Partial",
+      "finding": "Fulfillment selection, request chat and independent pickup acknowledgements exist; both acknowledgements activate the rental. No structured pickup/delivery time/place confirmation or automatic confirmed-schedule notification to both parties was found.",
+      "related": "FR-18, FR-43–44",
+      "evidence": "app/Services/RentalLifecycle.php:55; app/Models/Rental.php:35; app/Livewire/Messages/Show.php:39"
+    },
+    {
+      "id": "B.7",
+      "title": "Tracking and return",
+      "status": "Partial",
+      "finding": "Status display, reminder/overdue commands, return confirmation, condition records and completed history exist. Live refresh and scheduler operation are unverified. Owner inspection/closure additionally waits for renter return confirmation; deleted listings can break history.",
+      "related": "FR-19–22, FR-24",
+      "evidence": "app/Services/RentalLifecycle.php:73; app/Policies/RentalPolicy.php:68; routes/console.php:12"
+    },
+    {
+      "id": "B.8",
+      "title": "Ratings and reviews",
+      "status": "Partial",
+      "finding": "Both parties have post-completion review forms. Public user profiles publishing all received reviews are absent; only the renter gets a completion review notification. Renter review actions allow owner impersonation through the renter component.",
+      "related": "FR-23, FR-45",
+      "evidence": "app/Livewire/Renter/Rentals/Show.php:151; app/Services/RentalLifecycle.php:102; routes/web.php"
+    },
+    {
+      "id": "B.9",
+      "title": "Admin and dispute resolution",
+      "status": "Partial",
+      "finding": "User suspension, listing moderation, transaction overview, transaction disputes and resolution notifications exist. Admin cannot manage rental transactions directly; standalone listing/user reporting, general evidence attachments and a complete transaction investigation screen are absent.",
+      "related": "FR-26–30, FR-46",
+      "evidence": "app/Livewire/Admin/Rentals/Index.php; app/Livewire/Admin/Disputes/Index.php; resources/views/livewire/admin/disputes/index.blade.php"
+    },
+    {
+      "id": "B.10",
+      "title": "Rental cancellation",
+      "status": "Partial",
+      "finding": "Booking-detail cancellation computes fees, notifies the owner, records metadata and releases dates. Approved-request cancellation instead changes only request status, leaving a payable booking, no fee and no owner notice. Cancellation remains possible after owner handover until renter receipt.",
+      "related": "FR-34–37",
+      "evidence": "app/Livewire/Renter/RentalRequests/Index.php:17; app/Models/Rental.php:215; app/Services/RentalLifecycle.php:30"
+    }
+  ]
+}

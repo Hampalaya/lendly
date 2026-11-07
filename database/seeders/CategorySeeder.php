@@ -21,12 +21,11 @@ class CategorySeeder extends Seeder
         ];
 
         foreach ($tree as $name => $subcategories) {
-            $category = Category::create(['name' => $name, 'slug' => Str::slug($name)]);
+            $category = Category::firstOrCreate(['slug' => Str::slug($name)], ['name' => $name]);
 
             foreach ($subcategories as $subcategoryName) {
-                Category::create([
+                Category::firstOrCreate(['slug' => Str::slug($subcategoryName)], [
                     'name' => $subcategoryName,
-                    'slug' => Str::slug($subcategoryName),
                     'parent_id' => $category->id,
                 ]);
             }

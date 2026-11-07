@@ -1,0 +1,1672 @@
+TABLE OF CONTENTS
+I. INTRODUCTION3
+A. Purpose of the Document3
+B. Document Organization3
+II. PROJECT BACKGROUND AND TOPIC SELECTION4
+A. Overview of the Proposed Topics4
+B. Topic 1: Bakery Management System4
+C. Topic 2: Item Rental Management System (Selected)5
+D. Topic 3: CareAid: Barangay Management System6
+E. Selected Topic and Rationale7
+III. BUSINESS REQUIREMENTS: SYSTEM OVERVIEW8
+A. Project Overview8
+B. Scope8
+C. System Users and Stakeholders9
+D. Assumptions and Constraints9
+IV. REQUIREMENTS DEFINITION AND QUALITY FRAMEWORK10
+A. Definition of a Requirement10
+B. Requirement Classification and Conventions10
+C. Software Quality Factors11
+D. Emphasis and Applicability of Quality Factors in Lendly11
+V. FUNCTIONAL REQUIREMENT SPECIFICATIONS13
+A. Requirements Summary by Module13
+B. Detailed Functional Requirements13
+VI. NON-FUNCTIONAL REQUIREMENT SPECIFICATIONS17
+A. Overview17
+B. Product Operation Factors17
+C. Product Revision Factors18
+D. Product Transition Factors18
+E. Mapping of Baseline Categories to Quality Factors18
+VII. DEVELOPMENT PLAN20
+A. System Design20
+B. Process Flow22
+C. UI Design26
+D. Timeline and Gantt Chart34
+VIII. TEST PLAN37
+A. Introduction37
+B. Test Methodology38
+C. Test Deliverables40
+D. Resource and Environment Needs40
+I. INTRODUCTION
+A. Purpose of the Document
+This document is the preliminary Requirements Document for Lendly, a peer-to-peer item rental management system. It brings the business requirements, the development plan, and the test plan of the project together so that the development team, stakeholders, and testers share a common understanding of what the system must do and how it is expected to behave before development and testing proceed.
+The document defines the functional and non-functional requirements, system users, and overall process flow of Lendly. It also presents the design direction, project timeline, and quality assurance approach that will guide the succeeding phases of the project. It serves as the primary reference for the development team, stakeholders, and testers throughout the development process.
+B. Document Organization
+The document is organized into nine parts, numbered with Roman numerals. Requirements are identified by unique IDs (FR-## for functional and NFR-## for non-functional requirements) so they can be cross-referenced between the requirements, design, and test sections. The table below shows where each required deliverable is located.
+Required Deliverable
+Location
+Contents
+1. The System: Business Requirements
+Parts III to VI
+System overview, scope, users, assumptions, and constraints (Part III)
+Definition of requirements and the quality factor framework (Part IV)
+Functional Requirement Specifications (Part V)
+Non-Functional Requirement Specifications (Part VI)
+2. Development Plan
+Part VII
+System Design (A)
+Process Flow (B)
+UI Design (C)
+Timeline and Gantt Chart (D)
+3. Test Plan
+Part VIII
+Scope, quality objectives, roles, methodology, acceptance criteria, deliverables, resources, and test environment.
+Supporting: Topic Proposals
+Part II
+The three proposed system topics and the rationale for selecting the Item Rental Management System.
+II. PROJECT BACKGROUND AND TOPIC SELECTION
+A. Overview of the Proposed Topics
+As the first task of the project (WBS 1.1), the group prepared three proposed system topics for consideration. Each topic includes a brief overview of the system, its intended users, key features, and a general process flow. The group selected the Item Rental Management System, which is developed under the system name Lendly.
+B. Topic 1: Bakery Management System
+The Bakery Management System is a web-based system designed to help a Bakery manage its inventory, products, suppliers, and customer orders in one centralized platform. The system allows staff to monitor available products and ingredients, process customer orders, and track suppliers and purchases. It also provides a dashboard and reports to help the bakery monitor its daily operations and make better business decisions.
+Users
+Admin (Owner) — Manages users, products, ingredients, suppliers, orders, system settings, and reports.
+Staff — Manages inventory, products, customer orders, and other day-to-day bakery operations.
+Key Features
+Feature
+Description
+User Registration and Login
+Allows authorized users to create accounts and securely access the system based on their assigned role.
+User and Role Management
+Enables the admin to add, update, and manage user accounts and their access levels.
+Product and Category Management
+Allows staff to add, edit, and organize bakery products under their corresponding categories.
+Ingredient and Inventory Management
+Keeps track of raw materials and supplies used in bakery production.
+Stock Monitoring and Low-Stock Alerts
+Notifies staff when ingredient or product stock levels reach a critical threshold.
+Customer Order Management
+Enables staff to record and process customer orders.
+Order Status Tracking
+Allows staff to monitor the progress of an order from processing to completion.
+Supplier Management
+Maintains records of suppliers and the items they provide.
+Purchase and Restocking Management
+Tracks purchase orders and incoming stock from suppliers.
+Product Pricing and Promotional Pricing
+Allows the admin to set regular and discounted prices for products.
+Dashboard and Sales Monitoring
+Provides a summary view of daily sales, orders, and stock levels.
+Sales and Inventory Reports
+Generates reports summarizing sales performance and inventory movement.
+Report Export to PDF and Excel
+Allows generated reports to be downloaded in common file formats.
+System Settings Management
+Allows the admin to configure general system preferences.
+Transaction History
+Keeps a log of transactions for accountability and tracking.
+Process Flow
+The user logs in to the system based on their assigned role (Admin/Owner or Staff).
+Staff monitors ingredient and product stock levels through the inventory module.
+Staff records and processes customer orders as they come in.
+The system updates stock and inventory levels based on completed orders.
+Staff manages suppliers and processes purchase or restocking transactions when supplies run low.
+The admin monitors overall sales and inventory activity through the dashboard.
+The admin generates and exports reports to support business decisions.
+C. Topic 2: Item Rental Management System (Selected)
+This is a peer-to-peer rental marketplace system that allows people to rent items from other individuals instead of purchasing items that they only need temporarily. The system connects item owners who want to earn from their unused items with renters who need those items for a specific period. Owners can post their items with details such as the item name, description, rental price, availability, and condition, while renters can browse, search, find nearby items on a map, and request to rent available items. The system also includes an admin who manages users, listings, and transactions to ensure that the platform operates properly.
+Users
+Owner/Renter — Uses the platform to either list items for rent or rent items from other users. As an Owner, the user can list and manage items, set rental prices and availability, manage rental requests, handle item pickup, hand-over, and return, and others. As a Renter, the user can search and browse available items, view item details, send rental requests, make payments, coordinate pickup or delivery, return rented items, etc.
+Admin — Manages user accounts, item listings, rental transactions, and reports or disputes within the platform.
+Key Features
+Feature
+Description
+User Registration and Login
+Allows owners and renters to create accounts and securely access the platform, entering the interface of the role they select at login.
+Owner Item Listing and Management
+Enables owners to post, edit, or remove item listings available for rent.
+Item Search and Browsing
+Allows renters to search and filter available items based on their needs.
+Map / Find Items Near You
+Allows renters to see available items on an interactive map, use their current location to filter by distance and sort by nearest, and search by keyword and category.
+Item Details and Availability
+Displays complete item information, including price, description, and availability status.
+Rental Request and Approval
+Allows renters to send rental requests and owners to approve or decline them.
+Rental Booking
+Confirms a rental transaction once both parties agree on the rental terms.
+Rental Cancellation
+Allows renters to cancel a rental request or confirmed booking, with a cancellation fee applied when applicable based on the terms and agreement.
+Payment and Transaction Management
+Handles payment processing and records completed transactions.
+Item Pickup or Delivery
+Allows both parties to coordinate how the item will be handed over.
+Rental Tracking
+Monitors the status of an ongoing rental, including upcoming due dates.
+Item Return and Condition Checking
+Allows owners to confirm the return and condition of a rented item.
+Messaging and Communication
+Allows owners and renters to send and receive messages with each other to discuss rental details, item availability, pickup or delivery arrangements, and other transaction-related concerns.
+Ratings and Reviews
+Lets owners and renters rate and review each other after a completed rental.
+Rental History
+Displays a record of past bookings and transactions for each user.
+Owner Earnings and Transaction Records
+Shows owners a summary of their income from completed rentals.
+Admin Management of Users, Listings, and Transactions
+Allows the admin to oversee platform accounts, listings, and activities.
+Reports and Dispute Management
+Enables users to report issues and the admin to review and resolve disputes.
+Process Flow
+The owner and renter register and log in to the platform, selecting at login whether to enter as an Owner or as a Renter.
+The owner lists an item for rent, providing complete details, pricing, and availability.
+The renter searches for an item, including by finding items near their location on a map, and sends a rental request for the desired period.
+The owner reviews the request and approves or declines it.
+Once approved, the system confirms the booking, prompts for agreement terms, and processes the payment.
+The renter may cancel the request or booking prior to pickup or delivery, subject to the platform’s cancellation policy and applicable fees.
+The owner and renter coordinate the pickup or delivery of the item.
+The system tracks the rental period until the item is due for return.
+The owner confirms the item’s return and condition, closing the transaction.
+Both parties may rate and review each other, and the completed rental is recorded in their history.
+The admin monitors platform activity and resolves any reported issues or disputes.
+D. Topic 3: CareAid: Barangay Management System
+CareAid is a web-based Barangay Management System focused on making it easier for residents to request documents, access senior citizen benefits, and stay informed through barangay announcements. Through the platform, residents can request common barangay documents, while senior citizens have a dedicated module for viewing the requirements needed when applying for pension benefits. The system also includes an announcement and notification board covering financial aid postings for residents in need and scholarship postings for students. All requests and resident records are tracked through a resident database, allowing the barangay to manage transactions in an organized and efficient way.
+Users
+Residents — Regular constituents who can request documents, view announcements, and track their requests.
+Senior Citizens — View and follow the requirements for pension-related benefits.
+Students — View scholarship-related announcements.
+Barangay Staff / Admin — Process document requests, post announcements, and manage resident records.
+Key Features
+Feature
+Description
+Document Request
+Allows residents to request barangay documents online, such as a Certificate of Indigency or Barangay Clearance.
+Senior Citizen Pension Module
+Lists the requirements and steps needed for senior citizens applying for pension benefits.
+Announcement / Notification Board
+Posts financial aid announcements and scholarship-related postings for residents and students.
+Resident Database
+Stores resident records for tracking requests and transaction history.
+Request Status Tracking
+Allows residents to check the status of their submitted document requests.
+Login and Registration
+Provides secure account access for residents to use the app’s features.
+Process Flow
+The resident registers and logs in to the system.
+The resident submits a request for a needed barangay document, or views relevant announcements (pension requirements, scholarships, or financial aid postings).
+Barangay staff/admin receives and reviews the submitted request.
+Staff/admin processes the request and updates its status accordingly.
+The resident tracks the status of their request within the app until it is completed.
+The completed transaction is recorded in the resident database for future reference.
+E. Selected Topic and Rationale
+Among the three proposed system topics, the group has decided to pursue the Item Rental Management System as the final project topic. This topic was chosen because it offers a well-rounded scope that allows the team to apply and demonstrate a wide range of system development and quality assurance concepts, from user account management and transaction processing to booking, payment, and dispute resolution.
+It also presents a relevant and practical solution to a common need: allowing individuals to rent out unused items and helping others access items they only need temporarily, without the cost of buying them outright. With its clearly defined users, features, and process flow, the group believes this topic will provide a solid and manageable foundation for the succeeding phases of the project.
+III. BUSINESS REQUIREMENTS: SYSTEM OVERVIEW
+A. Project Overview
+Lendly is a peer-to-peer rental marketplace system that allows people to rent items from other individuals instead of purchasing items they only need temporarily. The system connects item owners who want to earn from their unused items with renters who need those items for a specific period. Owners can post their items with details such as the item name, description, rental price, availability, and condition, while renters can browse, search, find nearby items on a map, and request to rent available items. An admin manages users, listings, and transactions to ensure that the platform operates properly.
+The purpose of the business requirements in Parts III to VI is to clearly define the business and system requirements of the Item Rental Management System so that all stakeholders share a common understanding of the platform’s intended functionality, quality attributes, and end-to-end processes before development and testing proceed.
+B. Scope
+In Scope
+User registration, authentication, role selection at login, and account management for owners and renters.
+Owner item listing creation, editing, and management, including photos, pricing, availability, and location.
+Item search, browsing, and detailed item viewing for renters.
+Map-based item discovery for renters, including viewing listings on an interactive map, using the renter’s current location, distance filtering, nearest-first sorting, and keyword and category search.
+Rental request submission, approval, and booking confirmation, including acceptance of rental terms.
+Rental cancellation by the renter, including enforcement of the applicable cancellation policy and computation of cancellation fees as specified in the rental terms and agreement.
+Payment and transaction recording.
+Coordination of item pickup or delivery between owner and renter.
+In-app messaging that allows owners and renters to communicate with each other regarding rental requests, coordination, and inquiries.
+Rental tracking, due-date reminders, and return/condition confirmation.
+Ratings and reviews between owners and renters.
+Rental history and owner earnings/transaction records.
+Admin management of users, listings, transactions, reports, and disputes.
+Out of Scope
+Integration with a live third-party online payment gateway, unless confirmed as part of finalized requirements.
+Hardware requirements and underlying network infrastructure.
+Integration with third-party delivery or courier services.
+C. System Users and Stakeholders
+The table below identifies the primary users of the system and their corresponding roles and capabilities.
+Role
+Description
+Key Capabilities
+User
+(Owner/Renter)
+An individual who uses the platform to list personal items for rent and/or rent items listed by other users, entering the interface of the role selected at login.
+As an Owner: Create and manage item listings; set rental price, availability, condition, and location; approve or decline rental requests; coordinate pickup/delivery; confirm item hand-over and return; view earnings and transaction records.
+As a Renter: Search and browse available items, including finding items near them on a map; view item details; send rental requests; make payments; coordinate pickup/delivery; return rented items; rate and review owners.
+Admin
+The platform administrator responsible for the overall health and integrity of the system.
+Manage user accounts; monitor and moderate item listings; oversee rental transactions; review and resolve reports and disputes.
+In the functional requirements (Part V), the role System refers to behavior that the platform performs automatically, without a user action.
+D. Assumptions and Constraints
+Assumptions
+Users have access to a device and a stable internet connection to use the platform.
+Users provide accurate and truthful information during registration and item listing.
+Registered email addresses are valid and accessible for verification and notification purposes.
+Renters who want to use location-based features allow their browser to share their location, and owners provide an accurate location for each item listing.
+Constraints
+Online payment gateway integration is dependent on confirmation as part of the finalized project requirements.
+Item condition checking upon return relies on manual inspection by the owner; the system does not perform automated damage detection.
+Map and location-based features depend on the user’s browser supporting geolocation and on the availability of a map service; when the user’s location is not shared, distance-based filtering and sorting are not available.
+Coordination of delivery is limited to information exchange within the platform; the system does not manage third-party courier logistics.
+Rental cancellations are only permitted prior to item hand-over; cancellation fees, when applicable, are computed automatically based on the rules defined in the rental terms and agreement.
+IV. REQUIREMENTS DEFINITION AND QUALITY FRAMEWORK
+A. Definition of a Requirement
+A requirement is a documented statement of a condition or capability that a system must have in order to solve a problem or achieve an objective. The IEEE Standard Glossary of Software Engineering Terminology (IEEE Std 610.12) defines a requirement as:
+a condition or capability needed by a user to solve a problem or achieve an objective;
+a condition or capability that must be met or possessed by a system or system component to satisfy a contract, standard, specification, or other formally imposed document; and
+a documented representation of a condition or capability as in (1) or (2).
+Taken together, a requirement in this document has three aspects: it expresses a need of a stakeholder, it states an obligation that the system must satisfy, and it is recorded in a documented form that can be traced and verified. A requirement document collects these statements so that stakeholders, developers, and testers work from the same agreed baseline.
+To be useful for development and for software quality assurance, each requirement in this document is written to be:
+Clear and unambiguous — it can be read in only one way by all stakeholders.
+Verifiable — it can be checked by inspection, demonstration, or test, so that a test case can be written against it.
+Consistent — it does not conflict with other requirements.
+Complete — it states everything needed to implement and verify it.
+Traceable — it carries a unique ID that links it to the process flows, design, and test scope.
+B. Requirement Classification and Conventions
+Requirements in this document are divided into the following categories:
+Category
+Description
+Functional Requirements (FR-##)
+Describe what the system shall do: the features, behaviors, and user interactions of each module. They are listed in Part V and written in the form “The system shall …”.
+Non-Functional Requirements (NFR-##)
+Describe how well the system must perform: its quality attributes and standards. They are listed in Part VI and organized by quality factor.
+Scope, Assumptions, and Constraints
+Define the boundaries and conditions under which the requirements apply (Part III).
+The functional requirements are grouped into 19 feature modules. Requirements FR-01 to FR-38 and the baseline non-functional requirements come from the business requirements baseline of the project. Requirements FR-39 to FR-46 were derived from the System Process Flow (Part VII.B) to make sure that every step of each process flow is supported by a functional requirement. Requirements FR-47 to FR-53 support the Map / Find Items Near You feature. The non-functional requirements marked “Derived” in Part VI were derived from the functional requirements, the scope, and the Test Plan (Part VIII).
+C. Software Quality Factors
+Functional requirements describe what a system does, but they do not describe how well it must do it. For this reason, requirements also need to be defined for each quality factor that applies to the product. Quality factors give the team measurable qualities to design for and verify, and they connect the requirements directly to the testing activities of the Test Plan.
+This document uses the software quality factors of McCall’s quality model, which groups eleven factors into three categories according to the stage of the product’s life they concern: product operation (using the product), product revision (changing the product), and product transition (moving the product to a new environment).
+Quality Factor
+Definition
+Product Operation Factors: How well the system performs its intended function when it is operated.
+Correctness
+The extent to which the system satisfies its specification and fulfills the users’ objectives.
+Reliability
+The extent to which the system can be expected to perform its intended function with the required precision.
+Efficiency
+The amount of computing resources and code required by the system to perform its function.
+Integrity
+The extent to which access to the software or data by unauthorized persons can be controlled.
+Usability
+The effort required to learn, operate, prepare input for, and interpret the output of the system.
+Product Revision Factors: How easily the system can be changed once it is in operation.
+Maintainability
+The effort required to locate and fix an error in the system.
+Flexibility
+The effort required to modify an operational system.
+Testability
+The effort required to test the system to ensure that it performs its intended function.
+Product Transition Factors: How well the system adapts to a new environment.
+Portability
+The effort required to transfer the system from one hardware or software environment to another.
+Reusability
+The extent to which the system, or parts of it, can be reused in other applications.
+Interoperability
+The effort required to couple the system with another system.
+D. Emphasis and Applicability of Quality Factors in Lendly
+Requirement documents are expected to differ in the emphasis they place on the various quality factors, depending on the purpose of the system and the needs of its users. This difference in emphasis is also what allows the requirement documents of different systems to be compared with one another. Not all of the factors are necessarily represented in a given document: a factor may receive strong emphasis, only a narrow treatment, or no dedicated requirement at all.
+The table below states how each quality factor applies to Lendly and points to the non-functional requirements that address it (Part VI). Because Lendly is a marketplace that handles user accounts, bookings, and payment records between strangers, the strongest emphasis is placed on correctness, reliability, integrity, and usability.
+Quality Factor
+Applicable
+Emphasis
+Rationale for Lendly
+Related NFRs
+Correctness
+Yes
+High
+Lendly computes rental costs and cancellation fees, keeps booking, item status, and transaction records that users rely on, and shows distances to nearby items, so outputs must match the rental terms and stored data must stay accurate.
+NFR-01, NFR-02, NFR-19
+Reliability
+Yes
+High
+Owners and renters depend on consistent item availability, booking status, and payment records, and on the platform being accessible when needed. Renters must also be able to keep searching when their location is not available.
+NFR-03, NFR-04, NFR-20
+Efficiency
+Yes
+Moderate
+Core actions (search, request, booking) and the map view must respond within an acceptable time under normal load; no specific resource constraints have been defined.
+NFR-05, NFR-18
+Integrity
+Yes
+High
+The platform holds personal information and transaction records for three role types and uses the renter’s location, so password protection, role-based access control, permission-based location access, and privacy compliance are essential.
+NFR-06, NFR-07, NFR-08, NFR-17
+Usability
+Yes
+High
+The platform is used by the general public in both Owner and Renter roles; listing and booking must take minimal steps and errors must be easy to understand.
+NFR-09, NFR-10
+Maintainability
+Yes
+Moderate
+A modular build allows developers to update, patch, and extend features over time.
+NFR-11
+Flexibility
+Yes
+Moderate
+The platform is expected to grow in users, listings, and transactions without major redesign.
+NFR-12
+Testability
+Yes
+Moderate
+The quality assurance approach combines manual test cases with automated backend and frontend testing, so the system must support verification at unit, integration, and system levels.
+NFR-13, NFR-14
+Portability
+Yes
+Moderate
+As a web-based system, Lendly must work across major browsers and be responsive on different devices; hardware requirements are out of scope.
+NFR-15
+Reusability
+No
+Not represented
+No requirement has been defined for reusing Lendly components in other applications; the project focuses on delivering the rental platform itself. Modular construction (NFR-11) may incidentally support reuse but is not a stated objective.
+—
+Interoperability
+Limited
+Limited
+External integrations are limited to email delivery for verification and password recovery and a map service for the map view. Live payment gateways and courier services are out of scope.
+NFR-16
+Emphasis scale: High = central to the business function and supported by several requirements; Moderate = applicable and supported by focused requirements; Limited = applicable in a narrow area only; Not represented = no requirement defined for the factor.
+V. FUNCTIONAL REQUIREMENT SPECIFICATIONS
+This part lists the functional requirements of the system, grouped by feature module. It contains 53 requirements across 19 modules. Each requirement is identified by a unique ID and states the role(s) it applies to.
+A. Requirements Summary by Module
+Module
+Requirement IDs
+Applicable Roles
+Count
+User Registration & Login
+FR-01, FR-02, FR-03, FR-04, FR-39
+Owner, Renter, Admin
+5
+Item Listing & Management
+FR-05, FR-06, FR-07, FR-08, FR-47
+Owner
+5
+Item Search & Browsing
+FR-09
+Renter
+1
+Map & Nearby Item Search
+FR-48, FR-49, FR-50, FR-51, FR-52, FR-53
+Renter, System
+6
+Item Details & Availability
+FR-10
+Renter
+1
+Rental Request & Approval
+FR-11, FR-12, FR-13
+Owner, Renter
+3
+Rental Booking
+FR-14, FR-15, FR-40
+Owner, Renter, System
+3
+Payment & Transaction Management
+FR-16, FR-17, FR-41, FR-42
+Renter, Owner, System
+4
+Item Pickup or Delivery
+FR-18, FR-43, FR-44
+Owner, Renter, System
+3
+Rental Tracking
+FR-19, FR-20
+System
+2
+Item Return & Condition Checking
+FR-21, FR-22
+Owner, System
+2
+Ratings & Reviews
+FR-23, FR-45
+Owner, Renter, System
+2
+Rental History
+FR-24
+Owner, Renter
+1
+Owner Earnings & Records
+FR-25
+Owner
+1
+Admin Management
+FR-26, FR-27, FR-28
+Admin
+3
+Reports & Dispute Management
+FR-29, FR-30, FR-46
+Owner, Renter, Admin, System
+3
+Messaging
+FR-31, FR-32, FR-33
+Owner, Renter
+3
+Rental Cancellation
+FR-34, FR-35, FR-36, FR-37
+Renter, Owner, System
+4
+User Profile Management
+FR-38
+Owner, Renter
+1
+B. Detailed Functional Requirements
+ID
+Functional Requirement
+Applicable Role(s)
+User Registration & Login
+FR-01
+The system shall allow individuals to register an account as an Owner and/or a Renter using their name, email address, and password.
+Owner, Renter
+FR-02
+The system shall verify a new account via an email confirmation link or code before granting full access.
+Owner, Renter
+FR-03
+The system shall allow registered users to securely log in and log out using valid credentials, and shall require them to select at each login whether to enter as an Owner or as a Renter, giving access only to the interface and modules of the selected role.
+Owner, Renter
+FR-04
+The system shall allow users to recover or reset a forgotten password through a verified email process.
+Owner, Renter
+FR-39
+The system shall allow the admin to securely log in and log out using valid administrator credentials.
+Admin
+Item Listing & Management
+FR-05
+The system shall allow owners to create an item listing with name, category, description, rental price, availability, condition, etc.
+Owner
+FR-06
+The system shall allow owners to upload one or more photos for each item listing.
+Owner
+FR-07
+The system shall allow owners to edit, pause, or remove an existing item listing.
+Owner
+FR-08
+The system shall allow owners to update an item’s availability status (e.g., Available, Rented, Unavailable).
+Owner
+FR-47
+The system shall allow owners to set the location of an item listing so that the item can be shown on the map.
+Owner
+Item Search & Browsing
+FR-09
+The system shall allow renters to search and filter available items by keyword, category, price range, etc.
+Renter
+Map & Nearby Item Search
+FR-48
+The system shall display available item listings as pins on an interactive map.
+Renter
+FR-49
+The system shall allow the renter to use their current location, obtained through the browser with the user’s permission, to center the map and mark the renter’s own position.
+Renter
+FR-50
+The system shall allow the renter, once a location is set, to limit the displayed listings to a selected distance radius (e.g., 5, 10, 25, or 50 km).
+Renter
+FR-51
+The system shall automatically sort listings from nearest to farthest once the renter’s location is set.
+System
+FR-52
+The system shall allow the renter to search and filter the listings on the map by keyword and category, using the same filtering logic as the item search.
+Renter
+FR-53
+The system shall show, for each map pin, a preview containing the item’s photo, name, rental price per day, etc., and shall open the item’s detail page when the pin is selected.
+Renter
+Item Details & Availability
+FR-10
+The system shall display complete item details, including photos, description, rental rate, availability calendar, and owner rating.
+Renter
+Rental Request & Approval
+FR-11
+The system shall allow a renter to submit a rental request for an available item, specifying the desired rental period.
+Renter
+FR-12
+The system shall allow an owner to review, approve, or decline an incoming rental request.
+Owner
+FR-13
+The system shall notify both parties of the current status of a rental request (Pending, Approved, or Declined).
+Owner, Renter
+Rental Booking
+FR-14
+The system shall generate a confirmed booking record once a rental request is approved and the rental terms are accepted.
+System
+FR-15
+The system shall require both the owner and renter to accept the rental terms and agreement, which shall include the applicable cancellation policy, cancellation fees, and other details before a booking is finalized.
+Owner, Renter
+FR-40
+The system shall send a booking confirmation notification to both the owner and the renter once a booking is confirmed.
+System
+Payment & Transaction Management
+FR-16
+The system shall automatically compute the total rental cost based on the rental duration and the item’s rate.
+System
+FR-41
+The system shall allow the renter to complete payment for a confirmed booking through the platform’s supported payment method.
+Renter
+FR-17
+The system shall record every payment transaction and generate a digital receipt for both parties.
+System
+FR-42
+The system shall update the item’s status to “Reserved” for the duration of a confirmed booking once the payment transaction has been recorded.
+System
+Item Pickup or Delivery
+FR-18
+The system shall allow the owner and renter to coordinate and confirm item pickup or delivery arrangements.
+Owner, Renter
+FR-43
+The system shall allow the owner to mark an item as “Handed Over” and the renter to mark the item as “Received” once the item has been released and successfully received, respectively.
+Owner, Renter
+FR-44
+The system shall update the rental status to “Ongoing” once the hand-over of the item has been logged.
+System
+Rental Tracking
+FR-19
+The system shall track and display the real-time status of an active rental (e.g., Ongoing, Due Soon, Overdue).
+System
+FR-20
+The system shall send automated notifications for upcoming due dates and overdue rentals.
+System
+Item Return & Condition Checking
+FR-21
+The system shall allow the owner to confirm the return of a rented item and record its returned condition.
+Owner
+FR-22
+The system shall close and archive a rental transaction once the return has been confirmed.
+System
+Ratings & Reviews
+FR-23
+The system shall allow the owner and renter to rate and review each other after a completed transaction.
+Owner, Renter
+FR-45
+The system shall prompt the owner and renter to optionally rate and review each other once a rental transaction is closed, and shall publish each submitted rating and review to the respective user’s public profile.
+System
+Rental History
+FR-24
+The system shall allow users to view their complete history of past bookings and transactions.
+Owner, Renter
+Owner Earnings & Records
+FR-25
+The system shall allow owners to view a summary of their earnings and completed rental transactions.
+Owner
+Admin Management
+FR-26
+The system shall allow the admin to view, manage, and suspend user accounts when necessary.
+Admin
+FR-27
+The system shall allow the admin to monitor and moderate item listings for policy compliance.
+Admin
+FR-28
+The system shall allow the admin to view and manage all rental transactions on the platform.
+Admin
+Reports & Dispute Management
+FR-29
+The system shall allow owners and renters to file a report or dispute regarding a rental transaction.
+Owner, Renter
+FR-30
+The system shall provide the admin with tools to review, investigate, and resolve reported disputes.
+Admin
+FR-46
+The system shall notify the involved parties of the resolution once the admin closes a reported issue or dispute.
+System
+Messaging
+FR-31
+The system shall allow a renter and an owner to send and receive direct messages with each other regarding an item listing or rental transaction.
+Owner, Renter
+FR-32
+The system shall organize messages between an owner and a renter into a conversation thread and notify the recipient of new incoming messages.
+Owner, Renter
+FR-33
+The system shall allow users to view their complete message history with a specific owner or renter.
+Owner, Renter
+Rental Cancellation
+FR-34
+The system shall allow a renter to cancel a rental request or a confirmed booking prior to item hand-over, subject to the cancellation policy stated in the rental terms and agreement.
+Renter, Owner
+FR-35
+The system shall automatically compute and apply a cancellation fee, if applicable, based on the timing of the cancellation relative to the scheduled rental start date, in accordance with the rental terms and agreement.
+System
+FR-36
+The system shall notify the owner once a rental has been cancelled and update the item’s availability status accordingly.
+System, Owner
+FR-37
+The system shall record the cancellation, including the reason (if provided) and any cancellation fee applied, in the rental history of both parties.
+System
+User Profile Management
+FR-38
+The system shall allow users to view and update their personal information, including their picture, name, address, email, password, phone number, etc.
+Owner, Renter
+VI. NON-FUNCTIONAL REQUIREMENT SPECIFICATIONS
+A. Overview
+This part lists the quality attributes and performance standards the system must satisfy. To follow the quality factor framework in Part IV, the non-functional requirements are organized under the three categories of quality factors. The Basis column shows whether a requirement comes from the business requirements baseline (with its original category) or was derived from other parts of this document.
+B. Product Operation Factors
+ID
+Non-Functional Requirement
+Basis
+Correctness
+NFR-01
+The system must ensure that item status, booking records, and transaction history remain accurate and synchronized at all times.
+Baseline: Data Integrity
+NFR-02
+The system must accurately compute the total rental cost and any applicable cancellation fee based on the rental duration, the item’s rate, and the rental terms and agreement.
+Derived from FR-16 and FR-35
+NFR-19
+Distances shown to renters and the nearest-first ordering of listings must be accurately based on the renter’s location and the item’s location.
+Derived from FR-49 to FR-51 and FR-53
+Reliability
+NFR-03
+The system must consistently and accurately reflect item availability, booking status, and payment records across all user sessions.
+Baseline: Reliability
+NFR-04
+The system should be accessible to users at all times, with any scheduled maintenance communicated to users in advance.
+Baseline: Availability
+NFR-20
+The system must still allow renters to search and browse items when their location is unavailable or has not been shared, without applying distance-based filtering or sorting.
+Derived from FR-49 to FR-51
+Efficiency
+NFR-05
+Core actions such as searching for items, submitting a rental request, and processing a booking must complete within an acceptable response time under normal load.
+Baseline: Performance
+NFR-18
+The map view must display listing pins, and update them when the renter changes the location, distance radius, keyword, or category, within an acceptable response time under normal load.
+Derived from FR-48 to FR-52
+Integrity
+NFR-06
+All user passwords must be stored using secure hashing algorithms.
+Baseline: Security
+NFR-07
+Sensitive data must be protected against unauthorized access through role-based access control for Owner, Renter, and Admin accounts.
+Baseline: Security
+NFR-08
+Rental agreements, data handling, and payment processing must align with applicable consumer protection and data privacy standards.
+Baseline: Compliance
+NFR-17
+The system must access a user’s device location only with the user’s permission.
+Derived from FR-49 and NFR-08
+Usability
+NFR-09
+The system must provide a simple, intuitive interface that allows owners to list items and renters to complete a booking with minimal steps.
+Baseline: Usability
+NFR-10
+Error messages displayed to users must be clear, specific, and actionable.
+Derived from Test Plan quality objectives (Part VIII)
+C. Product Revision Factors
+ID
+Non-Functional Requirement
+Basis
+Maintainability
+NFR-11
+The system must be built in a modular manner to allow developers to easily update, patch, or extend features over time.
+Baseline: Maintainability
+Flexibility
+NFR-12
+The system architecture must support a growing number of users, item listings, and transactions without requiring major redesign.
+Baseline: Scalability
+Testability
+NFR-13
+The system must allow its backend functionality to be validated through automated request and response testing, and its user interface workflows through automated front-end testing, in addition to manual test cases.
+Derived from Test Plan (Test Methodology, Testing Tools)
+NFR-14
+The system must be implemented so that individual functions, such as registration form validation, item listing form validation, and booking status logic, can be validated independently.
+Derived from Test Plan (Test Levels)
+D. Product Transition Factors
+ID
+Non-Functional Requirement
+Basis
+Portability
+NFR-15
+The system must function properly across major web browsers and be responsive on different devices.
+Baseline: Compatibility
+Reusability
+No dedicated requirement has been defined for this factor. See Part IV.D for the rationale.
+Interoperability
+NFR-16
+The system must be able to interface with an email delivery service for account verification and password recovery, and with a map service for displaying the map view. Interfaces with other external services, such as live third-party payment gateways and courier services, are outside the current scope unless confirmed as part of the finalized requirements.
+Derived from FR-02, FR-04, FR-48, and Scope
+E. Mapping of Baseline Categories to Quality Factors
+The baseline non-functional requirements were originally grouped under ten categories. The table below shows how each category maps to a quality factor in this document.
+Baseline Category
+Quality Factor
+Factor Category
+Requirement ID
+Security
+Integrity
+Operation
+NFR-06, NFR-07
+Performance
+Efficiency
+Operation
+NFR-05
+Usability
+Usability
+Operation
+NFR-09
+Reliability
+Reliability
+Operation
+NFR-03
+Availability
+Reliability
+Operation
+NFR-04
+Data Integrity
+Correctness
+Operation
+NFR-01
+Compliance
+Integrity
+Operation
+NFR-08
+Maintainability
+Maintainability
+Revision
+NFR-11
+Scalability
+Flexibility
+Revision
+NFR-12
+Compatibility
+Portability
+Transition
+NFR-15
+VII. DEVELOPMENT PLAN
+The Development Plan describes how Lendly will be designed and built. It covers the system design, the end-to-end process flows, the user interface design, and the project timeline with its Gantt chart.
+A. System Design
+A.1 Architecture Overview
+Lendly is a web-based system accessed by Owners, Renters, and the Admin through standard web browsers on desktop and mobile devices. The proposed design separates the system into a presentation layer (frontend), an application layer (backend business logic), and a data layer (MySQL database), which supports the modular build required by NFR-11 and the independent testing required by NFR-13 and NFR-14. The in-scope external services are email delivery and a map service used for the map view; a live payment gateway and third-party delivery services are outside the current scope.
+Figure 1. Proposed high-level architecture of Lendly
+A.2 System Components
+Component
+Responsibility
+Related Requirements
+Presentation Layer (Frontend)
+Web interface for Owners, Renters, and the Admin; displays listings, the map view, booking and rental status, notifications, and clear error messages; responsive across devices.
+NFR-09, NFR-10, NFR-15, NFR-18; all user-facing modules
+Application Layer (Backend)
+Business logic and validation: account and access control, listing and booking rules, rental cost and cancellation fee computation, distance computation and nearest-first sorting, status changes, notifications, and admin tools.
+FR-01 to FR-53; NFR-01, NFR-02, NFR-07, NFR-11, NFR-19
+Data Layer (MySQL)
+Stores users, listings (with their locations), requests, bookings, transactions, returns, cancellations, messages, reviews, and reports; keeps records accurate and synchronized.
+NFR-01, NFR-03, NFR-06, NFR-12
+Email Service
+Sends the verification link or code and the password recovery message to the user’s registered email address.
+FR-02, FR-04, NFR-16
+Map Service
+Provides the interactive map on which available listings and the renter’s own position are displayed; the renter’s location is supplied by the browser with the user’s permission.
+FR-48 to FR-53, NFR-16, NFR-17
+A.3 Role and Module Access Matrix
+The matrix shows which roles take part in each module, based on the applicable roles of the functional requirements. “System” marks modules in which the platform performs automatic actions.
+Module
+Owner
+Renter
+Admin
+System
+User Registration & Login
+Item Listing & Management
+Item Search & Browsing
+Map & Nearby Item Search
+Item Details & Availability
+Rental Request & Approval
+Rental Booking
+Payment & Transaction Management
+Item Pickup or Delivery
+Rental Tracking
+Item Return & Condition Checking
+Ratings & Reviews
+Rental History
+Owner Earnings & Records
+Admin Management
+Reports & Dispute Management
+Messaging
+Rental Cancellation
+User Profile Management
+A.4 Key Data Entities
+The conceptual data entities below are derived from the functional requirements and will be refined in the database design during development.
+Entity
+Description and Key Attributes
+Related Requirements
+User Account
+Name, email address, phone number, password (stored hashed), address, picture, role (Owner, Renter, or Admin), verification and suspension status.
+FR-01 to FR-04, FR-26, FR-38, FR-39
+Item Listing
+Name, category, description, rental price, availability, condition, photos, location (used for the map and distance), availability status (e.g., Available, Reserved, Rented, Unavailable).
+FR-05 to FR-08, FR-10, FR-27, FR-42, FR-47, FR-48
+Rental Request
+Item, renter, desired rental period, and request status (Pending, Approved, or Declined).
+FR-11 to FR-13
+Booking
+Accepted rental terms and agreement, computed rental cost, booking status, and any cancellation record (reason and fee).
+FR-14, FR-15, FR-34 to FR-37, FR-40
+Payment Transaction
+Amount, payment record, and digital receipt for both parties.
+FR-16, FR-17, FR-41, FR-42
+Hand-over and Return Record
+Handed Over and Received marks, rental status (Ongoing, Due Soon, Overdue), returned condition, and closure.
+FR-18 to FR-22, FR-43, FR-44
+Message and Conversation Thread
+Messages between an owner and a renter organized per conversation, with message history.
+FR-31 to FR-33
+Rating and Review
+Star rating and optional written comment between owner and renter, shown on the public profile.
+FR-23, FR-45
+Report and Dispute
+Reported item, user, or transaction; submitted evidence; admin action; and resolution status.
+FR-29, FR-30, FR-46
+Notification
+Request status, booking confirmation, due-date and overdue reminders, cancellations, new messages, and dispute resolutions.
+FR-13, FR-20, FR-32, FR-36, FR-40, FR-46
+B. Process Flow
+This section describes the end-to-end process flow of the system, from account creation through the completion of a rental transaction. Figure 2 gives an overview of the complete flow, followed by the step-by-step description of each flow.
+Figure 2. End-to-end process flow of a Lendly rental, with alternative and supporting flows
+B.1 User Registration and Login Flow
+This flow establishes how individuals create and access their accounts as either an Owner, a Renter, or both.
+Step-by-Step Process:
+The user accesses the platform and selects the “Sign Up” option.
+The user enters the required registration details: full name, email address, and password.
+The system validates the entered information and checks for existing accounts using the same email address.
+The system sends a verification link or code to the user’s registered email address.
+The user confirms the verification link or code within the given validity period.
+Upon successful verification, the account is activated and the user is redirected to the login page.
+Returning users log in using their registered email and password; a “Forgot Password” option is available for password recovery. After entering their credentials, users select whether to log in as an Owner or as a Renter, and the system opens only the interface and modules of the selected role.
+Process Outcome: Only verified individuals gain access to the platform, establishing a reliable foundation for all subsequent listing and rental activities.
+B.2 Item Listing and Management Flow (Owner)
+This flow describes how an owner posts an item and keeps its listing up to date.
+Step-by-Step Process:
+The owner logs in and navigates to the “My Listings” section of the dashboard.
+The owner selects “Add New Item” to begin creating a listing.
+The owner enters the item’s name, category, description, condition, rental price, available dates, etc.
+The owner sets the item’s location so that the listing can appear on the map.
+The owner uploads one or more photos of the item.
+The owner submits the listing for publishing.
+The system validates that all required fields are complete and publishes the listing to the marketplace.
+The owner may edit, pause, or remove the listing at any time from the dashboard.
+Process Outcome: Renters are able to browse accurate, up-to-date, and complete item listings maintained directly by the item owners.
+B.3 Item Search and Browsing Flow (Renter)
+This flow describes how a renter finds an item that fits their needs, either through the search list or through the map.
+Step-by-Step Process:
+The renter accesses the search or browse page of the platform, or opens the map view.
+The renter enters keywords and/or applies filters such as category, price range, and location.
+The system displays matching item listings along with key details (photo, name, price, availability, etc).
+In the map view, available items are shown as pins on an interactive map.
+The renter may choose “Use my location” so that, with the browser’s permission, the map centers on and marks the renter’s current position, and may limit the results to a chosen distance radius.
+Once the location is set, the system sorts the listings from nearest to farthest; keyword and category filters continue to apply.
+Each pin shows a preview of the item; selecting it opens the item’s detail page.
+The renter selects an item to view its full details, including description, photos, availability calendar, and others.
+Process Outcome: Renters can quickly locate suitable items, including those nearest to them, without unnecessary friction, improving the overall marketplace experience.
+B.4 Rental Request, Approval, and Booking Flow
+This flow governs how a rental transaction is initiated and confirmed between an owner and a renter.
+Step-by-Step Process:
+The renter selects the desired rental period and submits a rental request for the item.
+The system notifies the owner of the new incoming request.
+The owner reviews the request details and either approves or declines it.
+If approved, both the owner and renter are prompted to review and accept the rental terms and agreement.
+Once both parties accept the terms, the system generates a confirmed booking with the computed rental cost.
+Both parties receive a booking confirmation notification.
+Process Outcome: Rental transactions are formalized only after mutual agreement, protecting the interests of both the item owner and the renter.
+B.5 Payment and Transaction Flow
+This flow describes how rental fees are calculated, collected, and recorded.
+Step-by-Step Process:
+The system computes the total rental fee based on the agreed rental duration and the item’s rate.
+The renter completes payment through the platform’s supported payment method.
+The system records the transaction and generates a receipt for both the owner and the renter.
+The system updates the item’s status to “Reserved” for the duration of the confirmed booking.
+Process Outcome: All payments are accurately recorded and traceable, giving both parties a transparent transaction history.
+B.6 Item Pickup or Delivery Flow
+This flow describes how a rented item is physically transferred from the owner to the renter.
+Step-by-Step Process:
+The system notifies both parties of the confirmed pickup or delivery schedule.
+The owner and renter coordinate the exchange of the item, whether in person or through an agreed delivery arrangement.
+The owner marks the item as “Handed Over” once it has been released to the renter while the renter marks the item as “Received” once the item is successfully received.
+The system updates the rental status to “Ongoing.”
+Process Outcome: The hand-over of the item is clearly logged, giving both parties a documented starting point for the rental period.
+B.7 Rental Tracking and Return Flow
+This flow covers how an active rental is monitored and how the item is returned and closed out.
+Step-by-Step Process:
+The system tracks the rental period and displays its real-time status (Ongoing, Due Soon, or Overdue).
+The system sends reminder notifications as the due date approaches.
+The renter returns the item to the owner on or before the agreed due date.
+The owner inspects the returned item and records its condition in the system.
+The system closes the rental transaction and archives it in both users’ rental history.
+Process Outcome: Rentals are consistently monitored from start to finish, reducing disputes over due dates and item condition.
+B.8 Ratings and Reviews Flow
+This flow allows both parties to provide feedback after a completed transaction.
+Step-by-Step Process:
+After a rental transaction is closed, the system prompts both the owner and renter to optionally rate and review each other.
+Each user submits a star rating and an optional written comment.
+The system publishes the submitted rating and review to the respective user’s public profile.
+Process Outcome: A transparent reputation system is maintained, helping future users make informed rental decisions.
+B.9 Admin Management and Dispute Resolution Flow
+This flow describes how the admin oversees platform activity and resolves reported issues.
+Step-by-Step Process:
+The admin monitors the dashboard for user accounts, item listings, and ongoing transactions.
+The admin reviews any items, users, or transactions flagged or reported by owners and renters.
+The admin investigates the dispute by examining transaction details, or any submitted evidence.
+The admin takes appropriate action, such as mediation, a refund recommendation, or account suspension.
+The admin closes the report and notifies the involved parties of the resolution.
+Process Outcome: Reported issues are addressed consistently and fairly, maintaining trust and accountability across the marketplace.
+B.10 Rental Cancellation Flow
+This flow describes how a renter cancels a rental request or confirmed booking, and how any applicable cancellation fee is applied in accordance with the rental terms and agreement.
+Step-by-Step Process:
+The renter initiates cancellation of a rental request or a confirmed booking, prior to item hand-over, from the booking or rental details page.
+The system checks the timing of the cancellation against the cancellation policy stated in the rental terms and agreement.
+If the cancellation falls within a chargeable period, the system computes and applies the corresponding cancellation fee.
+The system notifies the owner that the rental has been cancelled and reverts the item’s status to “Available.”
+The system records the cancellation, including any cancellation fee applied and/or reason, in the transaction and rental history of both parties.
+Process Outcome: Cancellations are handled transparently and consistently, with cancellation fees applied only in accordance with the agreed rental terms, protecting the interests of both the owner and the renter.
+C. UI Design
+C.1 Design Considerations
+The initial user interface of Lendly is designed around the quality attributes and functional needs defined in Parts V and VI. The following considerations guide the UI/UX design task (WBS 1.5):
+Simple and intuitive flows — owners can list an item, and renters can complete a booking, with minimal steps (NFR-09).
+Visible status — request status, item availability, and rental status are shown clearly wherever they apply (FR-08, FR-13, FR-19).
+Map-based discovery — renters can see available items as pins on a map, optionally use their current location, and preview an item and its distance before opening it; browsing and searching remain available when location is not shared (FR-48 to FR-53, NFR-20).
+Clear, actionable error messages — errors tell the user what went wrong and how to fix it (NFR-10).
+Terms before booking — the rental terms and agreement, including the cancellation policy and fees, are shown before both parties accept and the booking is finalized (FR-15, FR-34, FR-35).
+Transparent costs — the computed rental cost and any cancellation fee are displayed to the user (FR-16, FR-35).
+Role-appropriate navigation — Owners, Renters, and the Admin see only the areas and actions available to their role (NFR-07). A user who is both an Owner and a Renter selects a role at login and enters a separate interface for that role, with no merged Owner/Renter view (FR-03).
+Responsive layout — screens adapt to different devices and work across major web browsers like Chrome (NFR-15).
+C.2 Navigation Map
+The navigation map shows the main screens of the platform grouped by the area of the system in which they appear.
+Figure 3. Navigation map of Lendly by user area
+C.3 Initial UI Design
+The initial UI design below presents the preliminary layout, visual elements, and key interactions of the system's main screens. It provides an initial representation of the interface based on the identified requirements and serves as a reference for further refinement during the UI/UX Design task and Frontend Development.
+Figure 4. Admin Dashboard
+Figure 5. Admin Listings
+Figure 6. Admin Transactions
+Figure 7. Admin Disputes
+Figure 8. Renter My Requests
+Figure 9. Renter Browse
+Figure 10. Renter Map
+Figure 11. Renter My Rentals
+Figure 12. Owner My Listings
+Figure 13. Owner Rental Requests
+Figure 14. Owner My Rentals
+Figure 15. Owner/Renter Dashboard
+Figure 16. Owner/Renter Messages
+D. Timeline and Gantt Chart
+D.1 Project Schedule
+Project Title
+Lendly: Item Rental Management System
+Project Leader
+Dorina Cables
+Start Date
+September 5, 2026
+End Date
+November 29, 2026
+Project Duration
+86 days
+Project Weeks
+Week 4 to Week 15
+The work breakdown structure (WBS) below lists the project phases and their tasks, with the assigned lead, schedule, and status as recorded in the project schedule. Dates are in 2026. 
+WBS
+Task Name
+Status
+Assigned To (Lead)
+Start
+End
+Days
+Week
+1
+THE SYSTEM
+Completed
+—
+Sep 5
+Sep 20
+16
+W4–W5
+1.1
+Topic Proposal
+Completed
+All
+Sep 5
+Sep 13
+9
+W4
+1.2
+Functional Requirement Specifications
+Completed
+Dorina Cables
+Sep 5
+Sep 13
+9
+W4
+1.3
+Non-Functional Requirement Specifications
+Completed
+Dorina Cables
+Sep 5
+Sep 13
+9
+W4
+1.4
+Process Flow
+Completed
+Dorina Cables
+Sep 5
+Sep 13
+9
+W4
+1.5
+Initial UI/UX Design
+Completed
+Jan Emmanuel Formentos
+Sep 5
+Sep 20
+16
+W4–W5
+2
+DEVELOPMENT
+In Progress
+—
+Sep 14
+Oct 11
+28
+W5–W8
+2.1
+Frontend Development
+Completed
+Djanisse Villaflor
+Sep 14
+Sep 27
+14
+W5–W6
+2.1.1
+Base Layout, Account & Profile Screens
+FR-01 to FR-04, FR-38, FR-39; NFR-07, NFR-09, NFR-10, NFR-15
+Completed
+Djanisse Villaflor
+Sep 14
+Sep 17
+4
+W5
+2.1.2
+Listing, Search & Item Details Screens
+FR-05 to FR-10, FR-47; NFR-09, NFR-10
+Completed
+Djanisse Villaflor
+Sep 15
+Sep 19
+5
+W5
+2.1.3
+Map View: Find Items Near You
+FR-48 to FR-53; NFR-17, NFR-18, NFR-20
+Completed
+Djanisse Villaflor
+Sep 17
+Sep 21
+5
+W5–W6
+2.1.4
+Request, Booking, Payment & Cancellation Screens
+FR-11 to FR-17, FR-34 to FR-37, FR-40, FR-41; NFR-08, NFR-09
+Completed
+Djanisse Villaflor
+Sep 18
+Sep 23
+6
+W5–W6
+2.1.5
+Pickup, Tracking & Return Screens
+FR-18 to FR-21, FR-43
+Completed
+Djanisse Villaflor
+Sep 22
+Sep 25
+4
+W6
+2.1.6
+Messaging, Reviews, History & Earnings Screens
+FR-23 to FR-25, FR-31 to FR-33, FR-45
+Completed
+Djanisse Villaflor
+Sep 23
+Sep 26
+4
+W6
+2.1.7
+Admin Dashboard, Reports & Disputes Screens
+FR-26 to FR-30, FR-46; NFR-07
+Completed
+Djanisse Villaflor
+Sep 24
+Sep 27
+4
+W6
+2.2
+Backend Development
+In Progress
+Viyel Ellao
+Sep 28
+Oct 11
+14
+W7–W8
+2.2.1
+Database, Authentication & Access Control
+FR-01 to FR-04, FR-38, FR-39; NFR-06, NFR-07, NFR-11, NFR-12, NFR-16
+In Progress
+Viyel Ellao
+Sep 28
+Oct 1
+4
+W7
+2.2.2
+Listing, Search & Item Details Services
+FR-05 to FR-10, FR-47; NFR-03, NFR-05
+In Progress
+Viyel Ellao
+Sep 29
+Oct 3
+5
+W7
+2.2.3
+Map & Nearby Item Services
+FR-48 to FR-53; NFR-16 to NFR-20
+In Progress
+Viyel Ellao
+Oct 1
+Oct 4
+4
+W7
+2.2.4
+Request, Booking, Payment & Cancellation Services
+FR-11 to FR-17, FR-34 to FR-37, FR-40 to FR-42; NFR-01, NFR-02, NFR-03, NFR-08
+In Progress
+Viyel Ellao
+Oct 3
+Oct 7
+5
+W7–W8
+2.2.5
+Pickup, Tracking & Return Services
+FR-18 to FR-22, FR-43, FR-44; NFR-01, NFR-03
+In Progress
+Viyel Ellao
+Oct 5
+Oct 8
+4
+W8
+2.2.6
+Messaging, Reviews, History & Earnings Services
+FR-23 to FR-25, FR-31 to FR-33, FR-45
+Not Started
+Viyel Ellao
+Oct 8
+Oct 10
+3
+W8
+2.2.7
+Admin, Reports & Dispute Services
+FR-26 to FR-30, FR-46; NFR-07
+Not Started
+Viyel Ellao
+Oct 8
+Oct 10
+3
+W8
+2.2.8
+System Integration
+NFR-01, NFR-03, NFR-05, NFR-13, NFR-14
+Not Started
+Viyel Ellao
+Oct 10
+Oct 11
+2
+W8
+3
+QUALITY ASSURANCE
+In Progress
+—
+Oct 12
+Oct 25
+14
+W9–W10
+3.1
+Software Test Plan
+In Progress
+Andre Cachola
+Oct 12
+Oct 18
+7
+W9
+3.2
+Test Cases
+Not Started
+Jan Emmanuel Formentos
+Oct 12
+Oct 18
+7
+W9
+3.3
+Software Testing
+Not Started
+Andre Cachola
+Oct 19
+Oct 25
+7
+W10
+3.4
+Defect Monitoring Report
+Not Started
+Dorina Cables
+Oct 19
+Oct 25
+7
+W10
+3.5
+Defect Summary
+Not Started
+Dorina Cables
+Oct 19
+Oct 25
+7
+W10
+4
+MONITORING AND CONTROLLING
+Not Started
+—
+Oct 26
+Nov 15
+21
+W11–W13
+4.1
+Deployment: Upload to Host/Server
+Not Started
+Viyel Ellao
+Oct 26
+Nov 15
+21
+W11–W13
+4.2
+Configuration
+Not Started
+Viyel Ellao
+Oct 26
+Nov 15
+21
+W11–W13
+4.3
+Testing/Debugging
+Not Started
+Neil Carlo Delmo
+Oct 26
+Nov 15
+21
+W11–W13
+4.4
+Review and Evaluate Progresses, Successes, and Failures
+Not Started
+All
+Oct 26
+Nov 15
+21
+W11–W13
+5
+CLOSING / SIGN-OFF
+Not Started
+—
+Nov 16
+Nov 29
+14
+W14–W15
+5.1
+Final Documentation Fixes
+Not Started
+Neil Carlo Delmo
+Nov 16
+Nov 22
+7
+W14
+5.2
+Final Project Delivery
+Not Started
+All
+Nov 16
+Nov 22
+7
+W14
+5.3
+Project Documentation/Archiving
+Not Started
+Neil Carlo Delmo
+Nov 23
+Nov 29
+7
+W15
+5.4
+Sign-Off Document
+Not Started
+Dorina Cables
+Nov 23
+Nov 29
+7
+W15
+D.2 Gantt Chart
+The Gantt chart below shows each task by project week (W4 to W15), followed by a chart of the same schedule. Darker bars mark phases, mid-tone bars mark Frontend and Backend Development, and lighter bars mark individual tasks and modules.
+Task
+September 2026
+October 2026
+November 2026
+W4
+W5
+W6
+W7
+W8
+W9
+W10
+W11
+W12
+W13
+W14
+W15
+Sep 5–13
+Sep 14–20
+Sep 21–27
+Sep 28–Oct 4
+Oct 5–11
+Oct 12–18
+Oct 19–25
+Oct 26–Nov 1
+Nov 2–8
+Nov 9–15
+Nov 16–22
+Nov 23–29
+1  THE SYSTEM
+1.1  Topic Proposal
+1.2  Functional Requirement Specifications
+1.3  Non-Functional Requirement Specifications
+1.4  Process Flow
+1.5  Initial UI/UX Design
+2  DEVELOPMENT
+2.1  Frontend Development
+2.1.1  Base Layout, Account & Profile Screens
+2.1.2  Listing, Search & Item Details Screens
+2.1.3  Map View: Find Items Near You
+2.1.4  Request, Booking, Payment & Cancellation Screens
+2.1.5  Pickup, Tracking & Return Screens
+2.1.6  Messaging, Reviews, History & Earnings Screens
+2.1.7  Admin Dashboard, Reports & Disputes Screens
+2.2  Backend Development
+2.2.1  Database, Authentication & Access Control
+2.2.2  Listing, Search & Item Details Services
+2.2.3  Map & Nearby Item Services
+2.2.4  Request, Booking, Payment & Cancellation Services
+2.2.5  Pickup, Tracking & Return Services
+2.2.6  Messaging, Reviews, History & Earnings Services
+2.2.7  Admin, Reports & Dispute Services
+2.2.8  System Integration 
+3  QUALITY ASSURANCE
+3.1  Software Test Plan
+3.2  Test Cases
+3.3  Software Testing
+3.4  Defect Monitoring Report
+3.5  Defect Summary
+4  MONITORING AND CONTROLLING
+4.1  Deployment: Upload to Host/Server
+4.2  Configuration
+4.3  Testing/Debugging
+4.4  Review and Evaluate Progresses, Successes, and Failures
+5  CLOSING / SIGN-OFF
+5.1  Final Documentation Fixes
+5.2  Final Project Delivery
+5.3  Project Documentation/Archiving
+5.4  Sign-Off Document
+VIII. TEST PLAN
+A. Introduction
+This Test Plan prescribes the scope, approach, resources, and schedule for all testing activities of the Item Rental Management System project (Lendly). The plan identifies the features to be tested, types of testing to be performed, personnel responsible, and associated risks.
+A.1 Scope
+In Scope. The following parts of the system will be tested, each traced to its functional requirements in Part V.
+Part
+Related Requirements
+Assigned Tester
+Description
+User Registration & Login
+FR-01, FR-02, FR-03, FR-04, FR-39
+Andre Cachola
+Account registration, login (including role selection), logout, email verification, and password recovery for both item owners and renters.
+Item Listing & Management
+FR-05, FR-06, FR-07, FR-08, FR-47
+Andre Cachola
+Creating, editing, and removing rental item listings.
+Item Search & Browsing
+FR-09
+Andre Cachola
+Searching and filtering of available items by keyword, category, and other criteria.
+Map & Nearby Item Search
+FR-48, FR-49, FR-50, FR-51, FR-52, FR-53
+Andre Cachola
+Displaying available items as pins on an interactive map, using the renter’s location, distance filtering, nearest-first sorting, keyword and category search, and item previews.
+Item Details & Availability
+FR-10
+Andre Cachola
+Viewing complete item details, including photos, description, rental rate, availability, and others.
+Rental Request & Approval
+FR-11, FR-12, FR-13
+Andre Cachola
+Submitting, reviewing, approving, or declining rental requests between item owners and renters.
+Rental Booking
+FR-14, FR-15, FR-40
+Andre Cachola
+Generating a confirmed booking and requiring acceptance of the rental terms and agreement before finalization.
+Payment & Transaction Management
+FR-16, FR-17, FR-41, FR-42
+Andre Cachola
+Computing rental costs and recording payment transactions with receipts for both parties.
+Item Pickup or Delivery
+FR-18, FR-43, FR-44
+Andre Cachola
+Coordinating and confirming item pickup or delivery arrangements between owners and renters.
+Rental Tracking
+FR-19, FR-20
+Andre Cachola
+Tracking the real-time status of active rentals and sending due-date and overdue notifications.
+Item Return & Condition Checking
+FR-21, FR-22
+Andre Cachola
+Confirming item return, recording its condition, and closing out the completed rental transaction.
+Ratings & Reviews
+FR-23, FR-45
+Andre Cachola
+Rating and reviewing the owner or renter after a completed rental transaction.
+Rental History
+FR-24
+Andre Cachola
+Viewing a complete history of past bookings and rental transactions.
+Owner Earnings & Records
+FR-25
+Andre Cachola
+Viewing a summary of earnings and completed rental transactions for item owners.
+Admin Management
+FR-26, FR-27, FR-28
+Andre Cachola
+Managing user accounts, moderating item listings, and overseeing rental transactions.
+Reports & Dispute Management
+FR-29, FR-30, FR-46
+Andre Cachola
+Filing reports or disputes on a rental transaction and having them reviewed and resolved by an admin.
+Messaging
+FR-31, FR-32, FR-33
+Andre Cachola
+Sending and receiving direct messages between an owner and a renter.
+Rental Cancellation
+FR-34, FR-35, FR-36, FR-37
+Andre Cachola
+Cancelling a rental request or booking, and updating rental history accordingly.
+User Profile Management
+FR-38
+Andre Cachola
+Viewing and updating personal profile information such as name, address, contact details, and password.
+Out of Scope.
+Online payment gateway integration.
+Hardware requirements and network infrastructure.
+Third-party delivery or courier service integration.
+A.2 Quality Objectives
+Confirm that authentication and registration controls work correctly for both item owners and renters.
+Validate that the terms and agreement step is enforced before a rental booking is finalized.
+Ensure error messages are clear, specific, and actionable for end users.
+Verify that item listings, bookings, and returns are accurately reflected in the system.
+Verify that location-based item discovery (map view, distance filtering, and nearest-first sorting) works correctly, including when the user’s location is not shared.
+Ensure that notifications are sent correctly for key events such as booking confirmation, due dates, and returns.
+Verify that the system remains stable and usable across the full rental and return flow.
+A.3 Roles and Responsibilities
+No.
+Member
+Role
+Tasks
+1
+Dorina Cables
+Project Leader
+Overall project oversight; test delivery sign-off; escalation point.
+2
+Jan Emmanuel Formentos
+System Analyst
+Requirements clarification and triage support.
+3
+Andre Cachola
+QA / Tester
+Test case creation, test execution, defect logging and reporting.
+4
+Viyel Ellao
+Lead Developer
+Bug fixes and development of system features.
+5
+Neil Carlo Delmo
+Documentation Lead
+Overall system documentation and compilation of project-related documents.
+6
+Djanisse Villaflor
+Designer
+UI/UX design of the system.
+B. Test Methodology
+B.1 Overview
+The team will use manual test cases, as well as an automated backend testing tool like Postman, and an automated frontend testing tool such as Selenium to validate the core features of the Item Rental Management System. Testing will be conducted in cycles aligned with the development milestones, with each cycle focusing on newly completed features to ensure their functionality, reliability, and proper integration.
+B.2 Test Levels
+Level
+Description
+Unit Testing
+Validation of individual functions such as registration form validation, item listing form validation, booking status logic, etc.
+Integration Testing
+Verification that the listing, booking, terms and agreement, and notification components interact correctly with each other, including the use of email service for verification and password recovery as well as map service for displaying location information.
+System Testing
+End-to-end user journey testing from browsing an item through booking, terms acceptance, and return confirmation.
+B.3 Bug Triage
+The team conducts a bug triage meeting at the end of each testing cycle. Findings are reviewed collectively and a fix plan is assigned to the developer. If the cycle passes acceptance criteria, the team proceeds to the next. All defects must be tracked in the traceability matrix.
+B.4 Acceptance Criteria
+Entry Criteria
+Exit Criteria
+Test data prepared and accessible.
+Entry criteria for the start of testing is a hand-off from the developers through email.
+No open Severity 1 or Severity 2 defects.
+100% test case execution completed.
+Minimum 95% test pass rate achieved.
+Suspension Criteria and Resumption Requirements. Testing is suspended if 40% or more of test cases fail within a cycle. Testing resumes only after the developer resolves all failing cases and issues a new hand-off.
+B.5 Test Completion and Sign-off
+Mandatory run rate: 90% (exceptions require documented justification)
+Mandatory pass rate: 95%
+Final sign-off by Project Leader: Dorina Cables
+B.6 Project Task, Estimation, and Schedule
+Task
+Members
+Estimated Effort
+Create test plan document
+QA/Tester, Documentation Lead
+2 hrs
+Test case design
+QA/Tester, System Analyst
+3 hrs
+Test execution
+QA/Tester
+3 hrs
+Bug triage meeting
+All members
+30 min
+Bug fix & re-test cycle
+Developer, QA/Tester
+2 hrs
+Test report & defect report
+QA/Tester
+1 hr
+Test delivery & sign-off
+Project Leader
+30 min
+TOTAL
+~12 hrs
+The testing activities are scheduled in the Quality Assurance phase of the project timeline (Part VII.D):
+WBS
+Task
+Lead
+Start
+End
+3.1
+Software Test Plan
+Andre Cachola
+Oct 12
+Oct 18
+3.2
+Test Cases
+Jan Emmanuel Formentos
+Oct 12
+Oct 18
+3.3
+Software Testing
+Andre Cachola
+Oct 19
+Oct 25
+3.4
+Defect Monitoring Report
+Dorina Cables
+Oct 19
+Oct 25
+3.5
+Defect Summary
+Dorina Cables
+Oct 19
+Oct 25
+C. Test Deliverables
+Before Testing
+During Testing
+After Testing
+This Test Plan Document
+Test Case Documents
+Test Design Specifications
+Postman Test Collection
+Selenium Test Scripts
+Test Data
+Defect / execution log template (traceability matrix)
+Test Results / Test Execution Report
+Defect Report (final status of all logged defects)
+Release Notes
+D. Resource and Environment Needs
+D.1 Testing Tools
+No.
+Resource
+Description
+1
+Postman
+Automated testing tool used to validate system requests, responses, and backend functionality.
+2
+Selenium
+Automated frontend testing tool used to validate user interactions, navigation, and end-to-end system workflows.
+3
+Web Browser
+Google Chrome/Edge on Windows 10 or 11 for UI and system testing.
+4
+Test Data
+Provided by the Developer prior to each cycle.
+5
+Defect Tracker
+Traceability matrix / defect monitoring template for error and execution logs.
+6
+Network
+Stable internet connection (minimum 5 Mb/s) via Wi-Fi or mobile data.
+D.2 Test Environment
+Item
+Specification
+Operating System
+Windows 10 or Windows 11
+Browser
+Google Chrome / Microsoft Edge (latest stable)
+Testing Tools
+Backend: Postman; Frontend: Selenium
+Network
+Stable internet connection (minimum 5 Mb/s) via Wi-Fi or mobile data
+Location Access
+Browser location permission enabled, to test the map and distance features
+Database / Web Server
+MySQL

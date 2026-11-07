@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Audit\RequirementGapTest" file="C:\Users\djani\lendly\audit\RequirementGapTest.php" tests="7" assertions="24" errors="0" failures="0" skipped="0" time="35.686260">
+    <testcase name="test_approved_request_cancellation_leaves_booking_payable_and_no_owner_notice" file="C:\Users\djani\lendly\audit\RequirementGapTest.php" line="52" class="Tests\Audit\RequirementGapTest" classname="Tests.Audit.RequirementGapTest" assertions="8" time="22.400756"/>
+    <testcase name="test_booking_approval_does_not_check_renter_acceptance_or_notify_owner" file="C:\Users\djani\lendly\audit\RequirementGapTest.php" line="65" class="Tests\Audit\RequirementGapTest" classname="Tests.Audit.RequirementGapTest" assertions="5" time="1.885385"/>
+    <testcase name="test_owner_can_submit_a_review_as_renter_through_renter_component" file="C:\Users\djani\lendly\audit\RequirementGapTest.php" line="75" class="Tests\Audit\RequirementGapTest" classname="Tests.Audit.RequirementGapTest" assertions="2" time="0.250073"/>
+    <testcase name="test_zero_latitude_disables_distance_computation_and_filter" file="C:\Users\djani\lendly\audit\RequirementGapTest.php" line="83" class="Tests\Audit\RequirementGapTest" classname="Tests.Audit.RequirementGapTest" assertions="2" time="3.290419"/>
+    <testcase name="test_cancellation_still_allowed_after_owner_has_logged_handover" file="C:\Users\djani\lendly\audit\RequirementGapTest.php" line="91" class="Tests\Audit\RequirementGapTest" classname="Tests.Audit.RequirementGapTest" assertions="2" time="1.222891"/>
+    <testcase name="test_deleting_listing_removes_normal_listing_relation_used_by_history" file="C:\Users\djani\lendly\audit\RequirementGapTest.php" line="100" class="Tests\Audit\RequirementGapTest" classname="Tests.Audit.RequirementGapTest" assertions="3" time="0.153648"/>
+    <testcase name="test_request_submission_does_not_recheck_listing_availability_after_mount" file="C:\Users\djani\lendly\audit\RequirementGapTest.php" line="109" class="Tests\Audit\RequirementGapTest" classname="Tests.Audit.RequirementGapTest" assertions="2" time="6.483089"/>
+  </testsuite>
+</testsuites>
