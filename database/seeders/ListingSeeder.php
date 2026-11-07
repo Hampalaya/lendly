@@ -8,14 +8,15 @@ use App\Models\Category;
 use App\Models\Listing;
 use App\Models\ListingImage;
 use App\Models\User;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-class ListingSeeder extends Seeder
+class ListingSeeder extends DemoSeeder
 {
     public function run(): void
     {
+        $this->ensureDemoEnvironment();
+        $this->call(CategorySeeder::class);
         $owners = User::whereIn('email', [
             'owner@tala.test',
             'ben.tennyson@lendly.test',
@@ -28,7 +29,7 @@ class ListingSeeder extends Seeder
             'blossom.utonium@lendly.test',
             'johnny.bravo@lendly.test',
             'samurai.jack@lendly.test',
-        ])->get()->keyBy('email');
+        ])->get()->filter(fn (User $owner) => $owner->hasVerifiedIdentity())->keyBy('email');
 
         if ($owners->isEmpty()) {
             return;
@@ -690,11 +691,13 @@ class ListingSeeder extends Seeder
                 continue;
             }
 
-            $category = Category::where('name', $sample['category'])->first();
-            $subcategory = Category::where('name', $sample['subcategory'])->first();
+            $category = Category::whereNull('parent_id')->where('slug', Str::slug($sample['category']))->firstOrFail();
+            $subcategory = Category::where('parent_id', $category->id)->where('slug', Str::slug($sample['subcategory']))->firstOrFail();
 
-            $listing = Listing::create([
+            $listing = Listing::withTrashed()->firstOrCreate([
                 'owner_id' => $owner->id,
+                'name' => $sample['name'],
+            ], [
                 'category_id' => $category->id,
                 'subcategory_id' => $subcategory?->id,
                 'name' => $sample['name'],
@@ -709,9 +712,13 @@ class ListingSeeder extends Seeder
                 'longitude' => $sample['longitude'],
                 'max_rental_duration_days' => $sample['max_rental_duration_days'],
                 'status' => ListingStatus::Published,
+                'available_from' => now('Asia/Manila')->toDateString(),
+                'available_until' => now('Asia/Manila')->addDays(90)->toDateString(),
             ]);
 
-            $this->attachPlaceholderImages($listing, $sample['name'], $sample['color']);
+            if ($listing->wasRecentlyCreated) {
+                $this->attachPlaceholderImages($listing, $sample['name'], $sample['color']);
+            }
         }
     }
 

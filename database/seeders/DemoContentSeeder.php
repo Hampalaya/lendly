@@ -13,7 +13,7 @@ use App\Models\Rental;
 use App\Models\RentalRequest;
 use App\Models\User;
 use App\Notifications\TalaNotification;
-use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Fills in the demo-facing content that TransactionSeeder doesn't touch —
@@ -22,10 +22,14 @@ use Illuminate\Database\Seeder;
  * account's notification bell have real rows to show instead of empty
  * states when the app is demoed.
  */
-class DemoContentSeeder extends Seeder
+class DemoContentSeeder extends DemoSeeder
 {
     public function run(): void
     {
+        $this->ensureDemoEnvironment();
+        if (DamageReport::exists() || Dispute::exists() || Message::exists() || DB::table('notifications')->exists()) {
+            return;
+        }
         $this->seedDamageReportsAndDisputes();
         $this->seedMessages();
         $this->seedNotifications();

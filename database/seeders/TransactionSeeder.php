@@ -18,7 +18,6 @@ use App\Models\RentalRequest;
 use App\Models\Review;
 use App\Models\SecurityDeposit;
 use App\Models\User;
-use Illuminate\Database\Seeder;
 
 /**
  * Seeds a realistic mix of rental requests/bookings across every status
@@ -27,7 +26,7 @@ use Illuminate\Database\Seeder;
  * the admin transactions page, owner earnings, rental history, and
  * notifications all have real content to demo rather than being empty.
  */
-class TransactionSeeder extends Seeder
+class TransactionSeeder extends DemoSeeder
 {
     protected float $commissionRate;
 
@@ -35,6 +34,10 @@ class TransactionSeeder extends Seeder
 
     public function run(): void
     {
+        $this->ensureDemoEnvironment();
+        if (RentalRequest::exists() || Rental::exists()) {
+            return;
+        }
         $this->commissionRate = (float) CommissionSetting::current()->commission_rate;
 
         $listings = Listing::with('owner')->get();

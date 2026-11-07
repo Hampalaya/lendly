@@ -2,19 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Seeder;
-
 /**
  * Extra demo member accounts (beyond admin@tala.test/owner@tala.test/
  * renter@tala.test) so seeded listings aren't all owned by one account —
  * names are Cartoon Network characters per the user's request, purely for
  * memorable demo data.
  */
-class MemberSeeder extends Seeder
+class MemberSeeder extends DemoSeeder
 {
     public function run(): void
     {
+        $this->ensureDemoEnvironment();
         $members = [
             ['name' => 'Ben Tennyson', 'email' => 'ben.tennyson@lendly.test'],
             ['name' => 'Gumball Watterson', 'email' => 'gumball.watterson@lendly.test'],
@@ -39,10 +37,7 @@ class MemberSeeder extends Seeder
         ];
 
         foreach ($members as $member) {
-            User::factory()->create([
-                'name' => $member['name'],
-                'email' => $member['email'],
-            ]);
+            $this->demoUser($member, identityVerified: true);
         }
     }
 }

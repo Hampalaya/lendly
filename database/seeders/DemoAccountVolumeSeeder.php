@@ -27,13 +27,14 @@ class DemoAccountVolumeSeeder extends TransactionSeeder
 {
     public function run(): void
     {
+        $this->ensureDemoEnvironment();
         $this->commissionRate = (float) CommissionSetting::current()->commission_rate;
 
         $owner = User::where('email', 'owner@tala.test')->first();
         $renter = User::where('email', 'renter@tala.test')->first();
-        $category = Category::inRandomOrder()->first();
+        $category = Category::whereNull('parent_id')->orderBy('id')->first();
 
-        if (! $owner || ! $renter || ! $category) {
+        if (! $owner || ! $renter || ! $category || ! $owner->hasVerifiedIdentity() || ! $renter->hasVerifiedIdentity()) {
             return;
         }
 
@@ -66,7 +67,7 @@ class DemoAccountVolumeSeeder extends TransactionSeeder
         $existing = Listing::where('owner_id', $owner->id)->count();
 
         for ($i = $existing; $i < 10; $i++) {
-            Listing::create([
+            $listing = Listing::create([
                 'owner_id' => $owner->id,
                 'category_id' => $category->id,
                 'name' => $itemNames[$i % count($itemNames)],
@@ -79,7 +80,10 @@ class DemoAccountVolumeSeeder extends TransactionSeeder
                 'longitude' => 121.043,
                 'max_rental_duration_days' => 14,
                 'status' => ListingStatus::Published,
+                'available_from' => now('Asia/Manila')->toDateString(),
+                'available_until' => now('Asia/Manila')->addDays(90)->toDateString(),
             ]);
+            $this->attachDemoImage($listing);
         }
     }
 
@@ -89,7 +93,7 @@ class DemoAccountVolumeSeeder extends TransactionSeeder
 
         for ($i = $existing; $i < 10; $i++) {
             $listing = $ownerListings[$i % $ownerListings->count()];
-            $requestingRenter = $i % 3 === 0 ? $renter : $otherMembers[$i % max($otherMembers->count(), 1)];
+            $requestingRenter = $otherMembers->isEmpty() || $i % 3 === 0 ? $renter : $otherMembers[$i % $otherMembers->count()];
 
             $this->createPendingRequest($listing, $requestingRenter);
         }
@@ -102,7 +106,7 @@ class DemoAccountVolumeSeeder extends TransactionSeeder
 
         for ($i = $existing; $i < 10; $i++) {
             $listing = $ownerListings[$i % $ownerListings->count()];
-            $requestingRenter = $i % 3 === 0 ? $renter : $otherMembers[$i % max($otherMembers->count(), 1)];
+            $requestingRenter = $otherMembers->isEmpty() || $i % 3 === 0 ? $renter : $otherMembers[$i % $otherMembers->count()];
             $status = $statusCycle[$i % count($statusCycle)];
 
             if ($status === RentalStatus::Completed) {
@@ -115,6 +119,9 @@ class DemoAccountVolumeSeeder extends TransactionSeeder
 
     private function topUpSentRequests(User $renter, $otherListings): void
     {
+        if ($otherListings->isEmpty()) {
+            return;
+        }
         $existing = RentalRequest::where('renter_id', $renter->id)->count();
 
         for ($i = $existing; $i < 10; $i++) {
@@ -126,6 +133,9 @@ class DemoAccountVolumeSeeder extends TransactionSeeder
 
     private function topUpRenterRentals(User $renter, $otherListings): void
     {
+        if ($otherListings->isEmpty()) {
+            return;
+        }
         $existing = Rental::where('renter_id', $renter->id)->count();
         $statusCycle = [RentalStatus::Active, RentalStatus::Paid, RentalStatus::Completed, RentalStatus::Returned];
 

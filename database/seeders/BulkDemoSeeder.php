@@ -6,47 +6,35 @@ use App\Enums\ListingCondition;
 use App\Enums\ListingStatus;
 use App\Models\Category;
 use App\Models\Listing;
-use App\Models\User;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
-class BulkDemoSeeder extends Seeder
+class BulkDemoSeeder extends DemoSeeder
 {
     public function run(): void
     {
-        if (Category::count() === 0) {
-            $this->call(CategorySeeder::class);
-        }
+        $this->ensureDemoEnvironment();
+        $this->call(CategorySeeder::class);
 
         $members = collect();
-        $password = Hash::make('password');
 
         for ($i = 1; $i <= 100; $i++) {
-            $members->push(User::updateOrCreate(
-                ['email' => "demo{$i}@tala.test"],
-                [
-                    'name' => "Demo Member {$i}",
-                    'role' => 'member',
-                    'status' => 'active',
-                    'email_verified_at' => now(),
-                    'password' => $password,
-                ],
-            ));
+            $members->push($this->demoUser(['email' => "demo{$i}@tala.test", 'name' => "Demo Member {$i}"], identityVerified: true));
         }
 
-        $categories = Category::whereNotNull('parent_id')->get();
+        $categories = Category::whereNotNull('parent_id')->orderBy('id')->get();
         $conditions = ListingCondition::cases();
         $locations = ['Batangas City', 'Lipa City', 'Tanauan City', 'Malvar', 'Santo Tomas', 'Nasugbu'];
 
-        $existing = Listing::where('name', 'like', 'Demo Item %')->count();
         $target = 250;
 
-        for ($i = $existing + 1; $i <= $target; $i++) {
+        for ($i = 1; $i <= $target; $i++) {
             $category = $categories[($i - 1) % $categories->count()];
             $owner = $members[($i - 1) % $members->count()];
+            if (! $owner->hasVerifiedIdentity() || Listing::withTrashed()->where('owner_id', $owner->id)->where('name', 'like', "Demo Item {$i} - %")->exists()) {
+                continue;
+            }
             $price = 150 + (($i * 73) % 1800);
 
-            Listing::create([
+            $listing = Listing::create([
                 'owner_id' => $owner->id,
                 'category_id' => $category->parent_id,
                 'subcategory_id' => $category->id,
@@ -66,8 +54,11 @@ class BulkDemoSeeder extends Seeder
                 'delivery_available' => $i % 3 === 0,
                 'is_available' => true,
                 'status' => ListingStatus::Published,
+                'available_from' => now('Asia/Manila')->toDateString(),
+                'available_until' => now('Asia/Manila')->addDays(90)->toDateString(),
                 'views_count' => $i * 7,
             ]);
+            $this->attachDemoImage($listing);
         }
     }
 }
