@@ -5,7 +5,7 @@
     <p>Cancellation fee: {{ $record->cancellation_fee !== null ? '₱'.number_format($record->cancellation_fee, 2) : 'Not recorded' }}</p>
     <p class="text-xs text-slate-500">
         @if ($record->cancelled_at)
-            Cancelled {{ $record->cancelled_at->format('M d, Y \a\t g:i A') }}
+            Cancelled {{ $record->cancelled_at->copy()->timezone('Asia/Manila')->format('M d, Y \a\t g:i A') }} (Philippine time)
         @else
             Cancellation time not recorded.
         @endif

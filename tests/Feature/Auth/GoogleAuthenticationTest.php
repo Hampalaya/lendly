@@ -279,7 +279,11 @@ class GoogleAuthenticationTest extends TestCase
         $state = $this->begin();
         $this->profile();
 
-        $this->finishOAuth($state)->assertRedirect(route('login'))->assertSessionHasErrors('google');
+        $this->finishOAuth($state)->assertRedirect(route('login'))->assertSessionHasErrors([
+            'google' => $kind === 'suspended'
+                ? 'Your account has been suspended. Please contact support for assistance.'
+                : 'Google sign-in could not be completed. Please try again or use your password.',
+        ]);
 
         $this->assertGuest();
         $this->assertDatabaseCount('users', 1);

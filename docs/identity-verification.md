@@ -13,6 +13,25 @@ The administrator must manually transfer/upload the QR image to the official che
 
 A raw cosine score is not a probability, confidence percentage or automatic verdict. Higher means more similar. No uncalibrated threshold decides access. A selfie photo (including a camera capture) does not establish liveness or prevent replay/deepfake attacks. Reviewers must assess the photos and official QR result together; unclear submissions should be rejected with instructions to retry.
 
+## Railway runtime
+
+The repository's `railpack.json` [extends the normal PHP/Laravel build](https://railpack.com/config/file/). It installs Python and its venv support, installs the pinned face dependencies, downloads the checksum-verified model files, and runs real detector/recognizer inference during the build. A failed check fails that build rather than deploying an image without a working face runtime. The build also adds a PHP ini fragment disabling the PHP version header.
+
+The runtime and models are copied into the final image at `/opt/lendly-face`, outside application upload storage. Both build and runtime configuration use:
+
+```text
+FACE_MATCH_PYTHON=/opt/lendly-face/runtime/bin/python
+FACE_MATCH_MODELS=/opt/lendly-face/models
+```
+
+Check for older service-variable overrides pointing at missing paths. Use Railpack for the application service and keep its generated build/start behavior; no changes to email variables or the database are required. Deploy this revision to the actual Railway-connected repository/branch, then run this inside the **new application container**:
+
+```sh
+php artisan identity:check-runtime
+```
+
+It must report healthy. This checks actual Python execution, model checksums, loading and inference with a generated blank image; it does not upload an ID, approve a member, or establish recognition accuracy. Then test submission with authorized non-sensitive fixture photos and confirm the pending submission can be reviewed. Passing local mocks is not proof of a working hosted runtime. Failed comparisons continue to block submission; this change does not bypass review or invent a score.
+
 ## Local setup
 
 On Linux or macOS, create the environment with `python3.13 -m venv storage/app/private/face-runtime` instead of the Windows `py` command below.

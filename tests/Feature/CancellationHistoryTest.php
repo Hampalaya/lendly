@@ -79,7 +79,7 @@ class CancellationHistoryTest extends TestCase
             $page->assertSee('History drill')
                 ->assertSee($request->cancellation_reason ?? 'No reason provided.')
                 ->assertSee('Cancellation fee: ₱'.number_format($request->cancellation_fee, 2))
-                ->assertSee('Cancelled '.$request->cancelled_at->format('M d, Y \a\t g:i A'));
+                ->assertSee('Cancelled '.$request->cancelled_at->copy()->timezone('Asia/Manila')->format('M d, Y \a\t g:i A'));
             $this->assertSame($request->id, $page->viewData('rentalRequests')->first()->id);
         }
     }
@@ -173,7 +173,7 @@ class CancellationHistoryTest extends TestCase
             Livewire::actingAs($user)->test($user->is($owner) ? OwnerBooking::class : RenterBooking::class, ['rental' => $rental])
                 ->assertSee($reason !== '' ? $reason : 'No reason provided.')
                 ->assertSee('Cancellation fee: ₱'.number_format($expectedFee, 2))
-                ->assertSee('Cancelled '.$rental->cancelled_at->format('M d, Y \a\t g:i A'));
+                ->assertSee('Cancelled '.$rental->cancelled_at->copy()->timezone('Asia/Manila')->format('M d, Y \a\t g:i A'));
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Exceptions\SuspendedGoogleAccount;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\AccountLockout;
@@ -83,9 +84,12 @@ class GoogleAuthController extends Controller
                 }
                 $user = $matches->first();
                 if ($user) {
-                    if ($user->trashed() || $user->isSuspended() || $user->isAdmin()
+                    if ($user->trashed() || $user->isAdmin()
                         || ($user->google_id !== null && $user->google_id !== $id)) {
                         throw $this->rejected();
+                    }
+                    if ($user->isSuspended()) {
+                        throw new SuspendedGoogleAccount;
                     }
                     if (! $user->hasVerifiedEmail()) {
                         // Discard credentials and sessions from an earlier, unconfirmed signup.
@@ -107,16 +111,15 @@ class GoogleAuthController extends Controller
                     ])->save();
                 }
                 $user = User::withTrashed()->whereKey($user->id)->lockForUpdate()->firstOrFail();
-                if (! $this->eligible($user) || $user->google_id !== $id || AuthEmail::normalize($user->email) !== $email) {
+                if ($user->google_id !== $id || AuthEmail::normalize($user->email) !== $email) {
                     throw $this->rejected();
                 }
+                $this->ensureEligible($user);
                 AccountLockout::ensureNotLocked($email, 'google');
                 Auth::guard('web')->login($user);
                 AccountLockout::ensureNotLocked($email, 'google');
                 $user->refresh();
-                if (! $this->eligible($user)) {
-                    throw $this->rejected();
-                }
+                $this->ensureEligible($user);
 
                 return $user;
             });
@@ -157,6 +160,16 @@ class GoogleAuthController extends Controller
         return ! $user->trashed() && ! $user->isSuspended() && ! $user->isAdmin() && $user->hasVerifiedEmail();
     }
 
+    private function ensureEligible(User $user): void
+    {
+        if (! $user->trashed() && ! $user->isAdmin() && $user->isSuspended()) {
+            throw new SuspendedGoogleAccount;
+        }
+        if (! $this->eligible($user)) {
+            throw $this->rejected();
+        }
+    }
+
     private function rejected(): ValidationException
     {
         return ValidationException::withMessages(['google' => 'Google sign-in could not be completed. Please try again or use your password.']);
@@ -170,6 +183,8 @@ class GoogleAuthController extends Controller
             'exception_code' => $exception?->getCode(),
         ], fn ($value) => $value !== null));
 
-        return redirect()->route('login')->withErrors($this->rejected()->errors());
+        return redirect()->route('login')->withErrors($exception instanceof SuspendedGoogleAccount
+            ? ['google' => 'Your account has been suspended. Please contact support for assistance.']
+            : $this->rejected()->errors());
     }
 }

@@ -1,0 +1,24 @@
+{
+    "$schema": "https://schema.railpack.com",
+    "provider": "php",
+    "buildAptPackages": ["...", "python3", "python3-venv", "libglib2.0-0", "libstdc++6"],
+    "steps": {
+        "build": {
+            "variables": {
+                "FACE_MATCH_PYTHON": "/opt/lendly-face/runtime/bin/python",
+                "FACE_MATCH_MODELS": "/opt/lendly-face/models"
+            },
+            "commands": ["...", "bash scripts/face-match/install-linux.sh /opt/lendly-face"]
+        }
+    },
+    "deploy": {
+        "variables": {
+            "FACE_MATCH_PYTHON": "/opt/lendly-face/runtime/bin/python",
+            "FACE_MATCH_MODELS": "/opt/lendly-face/models"
+        },
+        "inputs": [
+            "...",
+            {"step": "build", "include": ["/opt/lendly-face", "/usr/local/etc/php/conf.d/99-lendly-security.ini"]}
+        ]
+    }
+}

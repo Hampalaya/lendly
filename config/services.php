@@ -13,7 +13,7 @@ return [
 
     'face_match' => [
         'python' => env('FACE_MATCH_PYTHON', storage_path('app/private/face-runtime/'.(PHP_OS_FAMILY === 'Windows' ? 'Scripts/python.exe' : 'bin/python'))),
-        'models' => storage_path('app/private/face-models'),
+        'models' => env('FACE_MATCH_MODELS', storage_path('app/private/face-models')),
     ],
 
     'identity' => [
