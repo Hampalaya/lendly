@@ -32,6 +32,22 @@ Run `php artisan config:clear` after updating `.env`, and restart long-running d
 
 To check delivery, register with a Gmail address you control, open the verification email, log out, and request a password reset code. Check Inbox and Spam. Enter the code and a compliant confirmed password, then log in with the new password. SMTP failures show a retry message; signup retains the unverified account so its verification email can be resent. Until SMTP is configured, local log messages are for development only.
 
+## Configure verification and recovery email on Railway
+
+Railway disables outbound SMTP on Free, Trial, and Hobby plans. Lendly uses the Resend HTTPS API for hosted verification and password reset emails. [Railway email delivery](https://docs.railway.com/networking/outbound-networking#email-delivery)
+
+1. In Resend, add your sending domain and copy the displayed DNS records to your DNS provider. Wait until Resend shows the domain is verified for sending. [Verify a domain](https://resend.com/docs/dashboard/domains/introduction)
+2. Create a Resend key with Sending access for that domain. Add the key directly to the Lendly service's Railway Variables as `RESEND_API_KEY`. [Manage API keys](https://resend.com/docs/dashboard/api-keys/introduction)
+3. After deploying the version that includes the Resend PHP package, set these variables on the Lendly service. Use a sender address on the domain verified in Resend. Keep `APP_URL` set to the public HTTPS address used for verification links.
+
+```dotenv
+MAIL_MAILER=resend
+MAIL_FROM_ADDRESS=no-reply@your-verified-domain.com
+MAIL_FROM_NAME=Lendly
+```
+
+4. Apply the Railway changes. Sign in to an existing unverified test account and select **Resend verification email**. Open the link, then request a password reset code to confirm both emails arrive.
+
 ## Automated checks on this Windows installation
 
 The installed PHP has SQLite extensions available but disabled by default. These flags enable them only for the test process:
