@@ -81,17 +81,27 @@ describe('Integration tests — Requirements v2 processes', () => {
       await browser.pause(1200);
       await a.type('#name', 'QA Newbie Item');
       await a.type('#description', 'Should be blocked until the ID review is approved.');
-      await a.type('#location', 'Nasugbu, Batangas');
+      await a.submitWireForm('submitStep');
+      await (await $('#listing-photos')).waitForDisplayed({ timeout: 15000 });
+      await a.upload('#listing-photos');
+      await (await $('[wire\\:click^="removePendingPhoto"]')).waitForExist({ timeout: 20000 });
+      await a.submitWireForm('submitStep');
+      await (await $('#price_per_day')).waitForDisplayed({ timeout: 15000 });
       await a.setField('#available_from', a.daysFromNow(0));
       await a.setField('#available_until', a.daysFromNow(30));
       await a.type('#price_per_day', '300');
+      // Let the 500 ms live model debounce finish before advancing the wizard.
+      await browser.pause(800);
+      await a.submitWireForm('submitStep');
+      await (await $('#location')).waitForDisplayed({ timeout: 15000 });
       const map = await $('[x-ref="map"]');
       await map.scrollIntoView({ block: 'center' });
       await browser.pause(800);
       await map.click();
-      await a.upload('#listing-photos');
-      await (await $('[wire\\:click^="removePendingPhoto"]')).waitForExist({ timeout: 20000 });
-      await a.submitWireForm('save');
+      await a.type('#location', 'Nasugbu, Batangas');
+      await a.submitWireForm('submitStep');
+      await a.waitForText('Review Your Listing');
+      await a.submitWireForm('submitStep');
       await a.waitForText('Complete your ID review before creating or publishing a listing.');
     });
 
@@ -151,6 +161,7 @@ describe('Integration tests — Requirements v2 processes', () => {
     });
 
     it('IT-37 renter joins the waitlist for dates that are already booked (FR-70)', async () => {
+      await loginAs(fx.users.renter2.email, 'renter');
       await browser.url(`/listings/${fx.listings.drill.id}`);
       await a.scrollClick('button[aria-controls="rental-request-modal"]');
       await a.setField('#start_date', fx.dates.drillStart);
