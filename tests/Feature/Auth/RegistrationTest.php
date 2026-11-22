@@ -190,6 +190,23 @@ class RegistrationTest extends TestCase
         $this->assertSame('verification-mail-failed', session('status'));
     }
 
+    public function test_missing_resend_credentials_do_not_crash_registration(): void
+    {
+        config(['mail.default' => 'resend', 'services.resend.key' => null]);
+
+        Volt::test('pages.auth.register')
+            ->set('name', 'Test User')
+            ->set('email', 'testuser@gmail.com')
+            ->set('password', 'LendlyPass123!')
+            ->set('password_confirmation', 'LendlyPass123!')
+            ->call('register')
+            ->assertRedirect(route('verification.notice', absolute: false));
+
+        $this->assertAuthenticated();
+        $this->assertFalse(auth()->user()->hasVerifiedEmail());
+        $this->assertSame('verification-mail-failed', session('status'));
+    }
+
     public function test_registration_attempts_are_rate_limited(): void
     {
         $component = Volt::test('pages.auth.register')

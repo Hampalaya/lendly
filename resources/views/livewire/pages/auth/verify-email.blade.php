@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 new #[Layout('layouts.guest')] class extends Component
 {
@@ -40,7 +39,7 @@ new #[Layout('layouts.guest')] class extends Component
 
         try {
             Auth::user()->sendEmailVerificationNotification();
-        } catch (TransportExceptionInterface $exception) {
+        } catch (Throwable $exception) {
             report($exception);
             $this->addError('verification', 'We could not send your verification email. Please try again shortly.');
 

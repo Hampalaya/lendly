@@ -12,7 +12,6 @@ use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 new #[Layout('layouts.guest')] class extends Component
 {
@@ -60,7 +59,7 @@ new #[Layout('layouts.guest')] class extends Component
 
         try {
             event(new Registered($user));
-        } catch (TransportExceptionInterface $exception) {
+        } catch (Throwable $exception) {
             report($exception);
             Session::flash('status', 'verification-mail-failed');
         }

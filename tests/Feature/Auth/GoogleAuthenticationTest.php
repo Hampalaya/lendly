@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Category;
+use App\Models\Listing;
+use App\Models\RentalRequest;
 use App\Models\User;
 use App\Support\AccountLockout;
 use GuzzleHttp\Client;
@@ -11,6 +14,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
@@ -466,6 +470,92 @@ class GoogleAuthenticationTest extends TestCase
             ->assertSessionMissing('state')->assertSessionMissing('google_oauth_interface');
 
         $this->assertGuest();
+    }
+
+    public function test_member_can_close_the_account_with_the_linked_google_identity(): void
+    {
+        $member = $this->googleMemberForDeletion();
+        $state = $this->beginDeletion();
+        $this->profile();
+
+        $this->finishOAuth($state)->assertRedirect('/')->assertSessionMissing('google_account_deletion');
+
+        $this->assertGuest();
+        $this->assertSoftDeleted($member);
+        $this->assertNull($member->fresh()->google_id);
+        $this->finishOAuth($state)->assertRedirect(route('login'));
+    }
+
+    public function test_google_confirmation_with_another_identity_cannot_close_or_switch_accounts(): void
+    {
+        $member = $this->googleMemberForDeletion();
+        $state = $this->beginDeletion();
+        $this->profile(['sub' => 'other-google-account']);
+
+        $this->finishOAuth($state)->assertRedirect(route('profile'))->assertSessionHasErrors('account');
+
+        $this->assertAuthenticatedAs($member);
+        $this->assertModelExists($member);
+        $this->assertDatabaseCount('users', 1);
+    }
+
+    public function test_invalid_google_state_cannot_close_the_account(): void
+    {
+        $member = $this->googleMemberForDeletion();
+        $this->beginDeletion();
+
+        $this->finishOAuth('invalid-state')->assertRedirect(route('profile'))
+            ->assertSessionHasErrors('account')->assertSessionMissing('google_account_deletion')->assertSessionMissing('state');
+
+        $this->assertAuthenticatedAs($member);
+        $this->assertModelExists($member);
+    }
+
+    public function test_google_confirmation_preserves_outstanding_rental_checks(): void
+    {
+        $member = $this->googleMemberForDeletion();
+        $listing = Listing::create([
+            'owner_id' => User::factory()->create()->id,
+            'category_id' => Category::create(['name' => 'Cameras', 'slug' => 'cameras'])->id,
+            'name' => 'Test camera', 'description' => 'Test fixture', 'condition' => 'good',
+            'price_per_day' => 100, 'location' => 'Manila', 'max_rental_duration_days' => 10,
+        ]);
+        RentalRequest::create([
+            'listing_id' => $listing->id, 'renter_id' => $member->id,
+            'start_date' => now()->addDay(), 'end_date' => now()->addDay(),
+            'rental_days' => 1, 'fulfillment_method' => 'pickup', 'rental_fee' => 100,
+            'commission_rate' => 10, 'commission_amount' => 10, 'security_deposit' => 0,
+            'total_amount' => 110, 'status' => 'requested',
+        ]);
+        $state = $this->beginDeletion();
+        $this->profile();
+
+        $this->finishOAuth($state)->assertRedirect(route('profile'))->assertSessionHasErrors([
+            'account' => 'Settle your rental requests, rentals, deposits, damage claims, and disputes before deleting your account.',
+        ]);
+
+        $this->assertAuthenticatedAs($member);
+        $this->assertModelExists($member);
+    }
+
+    private function googleMemberForDeletion(): User
+    {
+        $member = User::factory()->create(['email' => 'testmember@gmail.com']);
+        $member->forceFill(['google_id' => 'google-123'])->save();
+        $this->actingAs($member)->withSession([
+            'password_hash_web' => Auth::guard('web')->hashPasswordForCookie($member->getAuthPassword()),
+        ]);
+
+        return $member;
+    }
+
+    private function beginDeletion(): string
+    {
+        Socialite::forgetDrivers();
+        $response = $this->post('/profile/delete-with-google')->assertRedirect();
+        parse_str(parse_url($response->headers->get('Location'), PHP_URL_QUERY), $query);
+
+        return $query['state'];
     }
 
     private function begin(string $interface = 'renter'): string

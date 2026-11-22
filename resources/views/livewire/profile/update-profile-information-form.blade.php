@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 new class extends Component
 {
@@ -125,7 +124,7 @@ new class extends Component
 
         try {
             $user->sendEmailVerificationNotification();
-        } catch (TransportExceptionInterface $exception) {
+        } catch (Throwable $exception) {
             report($exception);
             $this->addError('verification', 'We could not send your verification email. Please try again shortly.');
 

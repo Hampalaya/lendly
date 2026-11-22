@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Exceptions\SuspendedGoogleAccount;
 use App\Http\Controllers\Controller;
+use App\Livewire\Actions\Logout;
 use App\Models\User;
 use App\Support\AccountLockout;
 use App\Support\AuthEmail;
@@ -21,7 +22,7 @@ class GoogleAuthController extends Controller
 {
     public function redirect(Request $request): RedirectResponse
     {
-        $request->session()->forget(['state', 'google_oauth_interface', 'google_oauth_pending_user']);
+        $request->session()->forget(['state', 'google_oauth_interface', 'google_oauth_pending_user', 'google_account_deletion']);
         if (! $this->configured()) {
             return $this->failed();
         }
@@ -36,8 +37,43 @@ class GoogleAuthController extends Controller
         }
     }
 
-    public function callback(Request $request): RedirectResponse
+    public function confirmDeletion(Request $request): RedirectResponse
     {
+        $user = $request->user();
+        abort_unless($this->eligible($user) && $user->google_id, 403);
+
+        $request->session()->forget(['state', 'google_account_deletion']);
+
+        if ($this->configured()) {
+            try {
+                $redirect = Socialite::driver('google')->scopes(['openid', 'profile', 'email'])
+                    ->with(['prompt' => 'select_account'])->redirect();
+                $request->session()->put('google_account_deletion', [
+                    'user_id' => $user->id,
+                    'google_id' => $user->google_id,
+                    'expires_at' => now()->addMinutes(5)->timestamp,
+                ]);
+
+                return $redirect;
+            } catch (Throwable $exception) {
+                $request->session()->forget('state');
+                Log::warning('Google account deletion redirect failed.', ['exception_type' => $exception::class]);
+            }
+        }
+
+        return redirect()->route('profile')->withErrors(['account' => 'Google confirmation is unavailable. Please try again.']);
+    }
+
+    public function callback(Request $request, Logout $logout): RedirectResponse
+    {
+        if ($confirmation = $request->session()->pull('google_account_deletion')) {
+            return $this->finishDeletion($request, $confirmation, $logout);
+        }
+
+        if ($request->user()) {
+            return redirect()->route('dashboard');
+        }
+
         $request->session()->forget('google_oauth_pending_user');
         $stage = 'profile';
         try {
@@ -141,6 +177,45 @@ class GoogleAuthController extends Controller
             return $this->failed($stage, $exception);
         } finally {
             $request->session()->forget(['state', 'google_oauth_interface']);
+        }
+    }
+
+    private function finishDeletion(Request $request, array $confirmation, Logout $logout): RedirectResponse
+    {
+        try {
+            $member = $request->user();
+            if (! $member) {
+                return $this->failed('deletion_session');
+            }
+            if ($member->id !== $confirmation['user_id'] || now()->timestamp >= $confirmation['expires_at']) {
+                return redirect()->route('profile')->withErrors(['account' => 'Google confirmation expired. Start again from your profile.']);
+            }
+            if (! $this->configured() || $request->has('error')) {
+                return redirect()->route('profile')->withErrors(['account' => 'Account deletion was not confirmed with Google.']);
+            }
+
+            $googleId = Socialite::driver('google')->user()->getId();
+            DB::transaction(function () use ($member, $confirmation, $googleId): void {
+                $member = User::query()->lockForUpdate()->find($member->id);
+                if (! $member || ! $this->eligible($member) || ! $member->google_id
+                    || $member->google_id !== $confirmation['google_id'] || $member->google_id !== $googleId) {
+                    throw ValidationException::withMessages(['account' => 'Confirm with the Google account linked to this Lendly account.']);
+                }
+
+                $member->closeAccount();
+            });
+
+            $logout();
+
+            return redirect('/');
+        } catch (ValidationException $exception) {
+            return redirect()->route('profile')->withErrors($exception->errors());
+        } catch (Throwable $exception) {
+            Log::warning('Google account deletion confirmation failed.', ['exception_type' => $exception::class]);
+
+            return redirect()->route('profile')->withErrors(['account' => 'Google confirmation could not be completed. Please try again.']);
+        } finally {
+            $request->session()->forget('state');
         }
     }
 

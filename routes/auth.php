@@ -8,8 +8,6 @@ use Livewire\Volt\Volt;
 Route::middleware('guest')->group(function () {
     Route::get('auth/google/redirect', [GoogleAuthController::class, 'redirect'])
         ->middleware('throttle:20,1')->name('auth.google.redirect');
-    Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])
-        ->middleware('throttle:20,1')->name('auth.google.callback');
     Volt::route('register', 'pages.auth.register')
         ->name('register');
 
@@ -25,7 +23,12 @@ Route::middleware('guest')->group(function () {
     Route::redirect('reset-password/{token}', '/forgot-password');
 });
 
+Route::get('auth/google/callback', [GoogleAuthController::class, 'callback'])
+    ->middleware('throttle:20,1')->name('auth.google.callback');
+
 Route::middleware('auth')->group(function () {
+    Route::post('profile/delete-with-google', [GoogleAuthController::class, 'confirmDeletion'])
+        ->middleware('throttle:20,1')->name('profile.delete-with-google');
     Volt::route('auth/google/interface', 'pages.auth.google-interface')
         ->middleware('verified')->name('auth.google.interface');
 

@@ -43,6 +43,11 @@ new class extends Component
     </div>
 
     <x-modal name="confirm-user-deletion" :show="$errors->isNotEmpty()" focusable>
+        @if (auth()->user()->google_id)
+            <form id="confirm-google-account-deletion" method="POST" action="{{ route('profile.delete-with-google') }}">
+                @csrf
+            </form>
+        @endif
         <form wire:submit="deleteUser" class="p-6 sm:p-8" role="dialog" aria-modal="true" aria-labelledby="delete-account-title" aria-describedby="delete-account-description">
 
             <h2 id="delete-account-title" class="text-lg font-bold text-slate-900">
@@ -50,13 +55,15 @@ new class extends Component
             </h2>
 
             <p id="delete-account-description" class="mt-2 text-sm leading-6 text-slate-500">
-                {{ __('Your access and personal profile details will be removed. Shared rental history will be retained. Enter your password to confirm account deletion.') }}
+                {{ __('Your access and personal profile details will be removed. Shared rental history will be retained.') }}
+                @if (auth()->user()->google_id)
+                    {{ __('Confirm with your Lendly password or your linked Google account.') }}
+                @else
+                    {{ __('Enter your password to confirm account deletion.') }}
+                @endif
             </p>
 
             <div class="mt-6">
-                @if (auth()->user()->google_id)
-                    <p class="mb-4 text-sm leading-6 text-slate-600">If you only sign in with Google, sign out and use <strong>Forgot password?</strong> on the login page to set a Lendly password before confirming deletion.</p>
-                @endif
                 <x-input-label required for="delete_account_password" value="{{ __('Password') }}" />
 
                 <x-password-input
@@ -82,6 +89,11 @@ new class extends Component
                 <x-danger-button class="min-h-11" wire:loading.attr="disabled" wire:target="deleteUser">
                     {{ __('Delete Account') }}
                 </x-danger-button>
+                @if (auth()->user()->google_id)
+                    <x-danger-button form="confirm-google-account-deletion" class="min-h-11">
+                        {{ __('Delete with Google') }}
+                    </x-danger-button>
+                @endif
             </div>
         </form>
     </x-modal>

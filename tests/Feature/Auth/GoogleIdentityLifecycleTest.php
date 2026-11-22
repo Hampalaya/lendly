@@ -59,7 +59,7 @@ class GoogleIdentityLifecycleTest extends TestCase
         $this->assertSoftDeleted($user);
     }
 
-    public function test_google_members_can_find_password_setup_guidance_without_bypassing_password_checks(): void
+    public function test_google_members_can_choose_google_confirmation_from_the_account_deletion_form(): void
     {
         $user = User::factory()->create();
         $user->forceFill(['google_id' => 'google-member'])->save();
@@ -67,8 +67,8 @@ class GoogleIdentityLifecycleTest extends TestCase
         $this->actingAs($user)->withSession([
             'password_hash_web' => Auth::guard('web')->hashPasswordForCookie($user->getAuthPassword()),
         ])->get(route('profile'))->assertOk()
-            ->assertSee('If you only sign in with Google')
-            ->assertSee('sign out')->assertSee('Forgot password');
+            ->assertSee('Delete with Google')
+            ->assertSee(route('profile.delete-with-google'), false);
     }
 
     public function test_identity_step_links_to_correcting_the_account_name(): void
