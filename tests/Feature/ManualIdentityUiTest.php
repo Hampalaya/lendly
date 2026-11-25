@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\FaceComparison;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -22,15 +23,17 @@ class ManualIdentityUiTest extends TestCase
         parent::setUp();
         Storage::fake('local');
         $this->mock(FaceComparison::class)->shouldReceive('compare')->andReturn(0.63);
+        Process::fake(fn () => Process::result(exitCode: 1));
     }
 
-    private function submit(User $member): IdentitySubmission
+    private function submit(User $member, string $documentType = 'other_photo_id'): IdentitySubmission
     {
-        Livewire::actingAs($member)->test(Verify::class)->set('consent', true)
+        Livewire::actingAs($member)->test(Verify::class)->assertSee('school, work, government, or other ID')->set('consent', true)
+            ->set('documentType', $documentType)
             ->set('front', UploadedFile::fake()->image('front.jpg', 640, 480))
             ->set('selfie', UploadedFile::fake()->image('selfie.jpg', 640, 480))
             ->call('submit')->assertHasNoErrors()->assertDispatched('identity-submitted')
-            ->assertSet('front', null)->assertSet('selfie', null)->assertSet('consent', false)
+            ->assertSet('front', null)->assertSet('selfie', null)->assertSet('consent', false)->assertSet('documentType', '')
             ->assertSee('Awaiting administrator review')->assertSee('Browse items');
 
         return IdentitySubmission::where('user_id', $member->id)->latest('id')->firstOrFail();
@@ -41,7 +44,9 @@ class ManualIdentityUiTest extends TestCase
         $member = User::factory()->create();
         $submission = $this->submit($member);
         $this->assertSame('pending', $submission->status);
+        $this->assertSame('other_photo_id', $submission->document_type);
         $this->assertSame(0.63, $submission->face_similarity);
+        $this->assertNull($submission->extracted_name);
         $this->assertFalse($member->fresh()->hasVerifiedIdentity());
         $this->actingAs($member)->get(route('identity.documents', [$submission, 'front']))->assertOk()
             ->assertHeader('Cache-Control', 'no-store, private');
@@ -50,15 +55,21 @@ class ManualIdentityUiTest extends TestCase
 
     public function test_admin_queue_requires_all_checks_then_member_sees_reviewed_badge(): void
     {
-        $member = User::factory()->create();
+        Process::fake(fn () => Process::result(output: "School ID\nName: Maria Elena Santos"));
+        $member = User::factory()->create(['name' => 'Maria Elena Santos']);
         $submission = $this->submit($member);
         $admin = User::factory()->admin()->create();
         $this->actingAs($admin)->get(route('admin.identity-submissions.index'))->assertOk()->assertSee($member->name);
         Livewire::actingAs($admin)->test(AdminReviews::class)->call('selectSubmission', $submission->id)
-            ->assertSee('0.6300')->assertDontSee('https://everify.gov.ph/check', false)->assertSee('Required checks for approval')
-            ->call('review', 'approved')->assertHasErrors(['qr_checked', 'details_match', 'face_reviewed'])
-            ->set('qrChecked', true)->set('detailsMatch', true)->set('faceReviewed', true)
-            ->call('review', 'approved')->assertHasNoErrors()->assertSee('Review photos are no longer available');
+            ->assertSee('0.6300')->assertSee('Name read from ID')->assertDontSee('https://everify.gov.ph/check', false)
+            ->assertSee('How did you confirm this ID?')->assertSee('Direct confirmation from the issuer')
+            ->call('review', 'approved')->assertHasErrors(['document_checked', 'details_match', 'face_reviewed'])
+            ->set('documentChecked', true)->set('detailsMatch', true)->set('faceReviewed', true)
+            ->call('review', 'approved')->assertHasErrors('issuer_check')
+            ->set('issuerCheck', 'issuer_confirmation')
+            ->call('review', 'approved')->assertHasNoErrors()->assertSee('Review photos are no longer available')
+            ->assertSee('Document check: Direct confirmation from the issuer')
+            ->assertDontSee('Name read from ID');
         $this->assertTrue($member->fresh()->hasVerifiedIdentity());
         $this->actingAs($member)->get(route('identity.verify'))->assertOk()->assertSee('ID reviewed')
             ->assertDontSee('Submit for review');
@@ -68,9 +79,10 @@ class ManualIdentityUiTest extends TestCase
     public function test_rejected_member_sees_reason_and_can_submit_again(): void
     {
         $member = User::factory()->create();
-        $submission = $this->submit($member);
+        $submission = $this->submit($member, 'national_id');
         Livewire::actingAs(User::factory()->admin()->create())->test(AdminReviews::class)
-            ->call('selectSubmission', $submission->id)->set('notes', 'Please upload a readable QR code.')
+            ->call('selectSubmission', $submission->id)->assertSee('https://everify.gov.ph/check', false)
+            ->assertDontSee('How did you confirm this ID?')->set('notes', 'Please upload a readable QR code.')
             ->call('review', 'rejected')->assertHasNoErrors();
         $this->actingAs($member)->get(route('identity.verify'))->assertSee('Please upload a readable QR code.');
         $next = $this->submit($member);
@@ -87,7 +99,7 @@ class ManualIdentityUiTest extends TestCase
         $admin = User::factory()->admin()->create();
         $component = Livewire::actingAs($admin)->test(AdminReviews::class)->call('selectSubmission', $submission->id);
         User::whereKey($admin->id)->update(['role' => 'member']);
-        $component->set('qrChecked', true)->assertForbidden();
+        $component->set('documentChecked', true)->assertForbidden();
         $this->assertSame('pending', $submission->fresh()->status);
     }
 

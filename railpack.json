@@ -12,6 +12,7 @@
         }
     },
     "deploy": {
+        "aptPackages": ["...", "tesseract-ocr", "tesseract-ocr-eng"],
         "variables": {
             "FACE_MATCH_PYTHON": "/opt/lendly-face/runtime/bin/python",
             "FACE_MATCH_MODELS": "/opt/lendly-face/models"

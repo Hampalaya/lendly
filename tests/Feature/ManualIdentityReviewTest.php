@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -27,25 +28,30 @@ class ManualIdentityReviewTest extends TestCase
         parent::setUp();
         Storage::set('local', Storage::fake('identity-review-'.Str::random(12)));
         $this->mock(FaceComparison::class)->shouldReceive('compare')->andReturn(0.63)->byDefault();
+        Process::fake(fn () => Process::result(exitCode: 1));
         Route::get('/_test/identity-documents/{submission}/{kind}', IdentityDocumentController::class)
             ->middleware(SubstituteBindings::class);
     }
 
-    private function submit(?User $member = null): IdentitySubmission
+    private function submit(?User $member = null, string $documentType = 'national_id'): IdentitySubmission
     {
         return app(ManualIdentityReview::class)->submit($member ?? User::factory()->create(),
             UploadedFile::fake()->image('front.jpg', 640, 480),
             UploadedFile::fake()->image('back.png', 640, 480),
-            UploadedFile::fake()->image('selfie.jpg', 640, 480), true);
+            UploadedFile::fake()->image('selfie.jpg', 640, 480), true, $documentType);
     }
 
     public function test_submission_is_private_pending_and_stores_the_server_face_score(): void
     {
+        Process::fake(fn () => Process::result(output: "Student ID\nName: Maria Elena Santos\nStudent No: 12345"));
         $member = User::factory()->create();
         $submission = $this->submit($member);
 
         $this->assertSame('pending', $submission->status);
         $this->assertSame(0.63, $submission->face_similarity);
+        $this->assertSame('Maria Elena Santos', $submission->extracted_name);
+        $this->assertNotSame('Maria Elena Santos', $submission->getRawOriginal('extracted_name'));
+        $this->assertArrayNotHasKey('extracted_name', $submission->toArray());
         $this->assertNotNull($submission->consented_at);
         $this->assertFalse($member->fresh()->hasVerifiedIdentity());
         foreach (['front_path', 'back_path', 'selfie_path'] as $field) {
@@ -110,6 +116,14 @@ class ManualIdentityReviewTest extends TestCase
         } catch (ValidationException $exception) {
             $this->assertArrayHasKey('consent', $exception->errors());
         }
+        foreach (['', 'unrecognized'] as $type) {
+            try {
+                $this->submit($member, $type);
+                $this->fail('A supported ID type is required.');
+            } catch (ValidationException $exception) {
+                $this->assertArrayHasKey('document_type', $exception->errors());
+            }
+        }
         $this->assertSame([], Storage::disk('local')->allFiles());
     }
 
@@ -144,6 +158,7 @@ class ManualIdentityReviewTest extends TestCase
 
     public function test_approval_requires_each_confirmation_then_records_the_reviewer_and_purges_images(): void
     {
+        Process::fake(fn () => Process::result(output: 'Name: Maria Elena Santos'));
         $submission = $this->submit();
         $admin = User::factory()->admin()->create();
         foreach ([[false, true, true], [true, false, true], [true, true, false]] as $checks) {
@@ -157,15 +172,40 @@ class ManualIdentityReviewTest extends TestCase
         $reviewed = app(ManualIdentityReview::class)->review($admin, $submission->id, 'approved', 'Checked official result.', true, true, true);
 
         $this->assertSame('approved', $reviewed->status);
+        $this->assertSame('national_id_qr', $reviewed->verification_method);
         $this->assertSame($admin->id, $reviewed->reviewed_by);
         $this->assertNotNull($reviewed->reviewed_at);
         $this->assertTrue($reviewed->user->hasVerifiedIdentity());
         $this->assertSame('manual-review:'.$submission->id, $reviewed->user->identity_reference);
         $this->assertNotSame($reviewed->user->identity_reference, $reviewed->user->getRawOriginal('identity_reference'));
         $this->assertSame([], Storage::disk('local')->allFiles());
+        $this->assertNull($reviewed->fresh()->extracted_name);
 
         $this->expectException(ValidationException::class);
         app(ManualIdentityReview::class)->review($admin, $submission->id, 'rejected', 'Duplicate decision.');
+    }
+
+    public function test_other_photo_id_needs_a_recorded_issuer_check_before_approval(): void
+    {
+        $submission = $this->submit(documentType: 'other_photo_id');
+        $admin = User::factory()->admin()->create();
+        $review = app(ManualIdentityReview::class);
+
+        foreach (['', 'national_id_qr', 'appearance_only'] as $method) {
+            try {
+                $review->review($admin, $submission->id, 'approved', '', true, true, true, $method);
+                $this->fail('An issuer check is required for approval.');
+            } catch (ValidationException $exception) {
+                $this->assertArrayHasKey('issuer_check', $exception->errors());
+            }
+        }
+
+        $this->assertSame('pending', $submission->fresh()->status);
+        $this->assertFalse($submission->user->hasVerifiedIdentity());
+        $reviewed = $review->review($admin, $submission->id, 'approved', '', true, true, true, 'issuer_confirmation');
+        $this->assertSame('other_photo_id', $reviewed->document_type);
+        $this->assertSame('issuer_confirmation', $reviewed->verification_method);
+        $this->assertTrue($reviewed->user->hasVerifiedIdentity());
     }
 
     public function test_rejection_requires_a_reason_and_preserves_only_audit_metadata(): void

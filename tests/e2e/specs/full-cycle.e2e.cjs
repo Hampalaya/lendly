@@ -66,7 +66,7 @@ function submitIdentityFor(user) {
 
 async function approveIdentity(submissionId) {
   await a.scrollClick(`[wire\\:click="selectSubmission(${submissionId})"]`);
-  for (const model of ['qrChecked', 'detailsMatch', 'faceReviewed']) {
+  for (const model of ['documentChecked', 'detailsMatch', 'faceReviewed']) {
     const box = await $(`input[type="checkbox"][wire\\:model="${model}"]`);
     await box.waitForExist({ timeout: 15000 });
     if (!(await box.isSelected())) await a.scrollClick(`input[type="checkbox"][wire\\:model="${model}"]`);

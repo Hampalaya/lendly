@@ -25,7 +25,9 @@ class Index extends Component
 
     public string $notes = '';
 
-    public bool $qrChecked = false;
+    public bool $documentChecked = false;
+
+    public string $issuerCheck = '';
 
     public bool $detailsMatch = false;
 
@@ -48,7 +50,7 @@ class Index extends Component
         $this->admin();
         IdentitySubmission::findOrFail($id);
         $this->selectedId = $id;
-        $this->reset('notes', 'qrChecked', 'detailsMatch', 'faceReviewed');
+        $this->reset('notes', 'documentChecked', 'detailsMatch', 'faceReviewed', 'issuerCheck');
         $this->resetErrorBag();
     }
 
@@ -58,9 +60,9 @@ class Index extends Component
         abort_unless($this->selectedId !== null, 403);
         app(ManualIdentityReview::class)->review(
             $admin, $this->selectedId, $decision, $this->notes,
-            $this->qrChecked, $this->detailsMatch, $this->faceReviewed,
+            $this->documentChecked, $this->detailsMatch, $this->faceReviewed, $this->issuerCheck,
         );
-        $this->reset('notes', 'qrChecked', 'detailsMatch', 'faceReviewed');
+        $this->reset('notes', 'documentChecked', 'detailsMatch', 'faceReviewed', 'issuerCheck');
         session()->flash('status', 'Identity review saved.');
     }
 
@@ -86,6 +88,8 @@ class Index extends Component
 
         return view('livewire.admin.identity-submissions.index', [
             'sort' => $this->effectiveRecordSort(),
+            'documentTypes' => IdentitySubmission::DOCUMENT_TYPES,
+            'issuerChecks' => IdentitySubmission::ISSUER_CHECKS,
             'submissions' => $this->filterRecords(IdentitySubmission::query()->with('user')
                 ->when($this->filter !== 'all', fn ($query) => $query->where('status', $this->filter))
                 ->orderBy('id', $this->filter === 'pending' ? 'asc' : 'desc'), ['id'], ['user' => ['name', 'email']])->paginate(10),

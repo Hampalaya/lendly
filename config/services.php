@@ -16,6 +16,10 @@ return [
         'models' => env('FACE_MATCH_MODELS', storage_path('app/private/face-models')),
     ],
 
+    'identity_ocr' => [
+        'binary' => env('ID_OCR_BINARY', 'tesseract'),
+    ],
+
     'identity' => [
         'base_url' => env('IDENTITY_BASE_URL'),
         'client_id' => env('IDENTITY_CLIENT_ID'),

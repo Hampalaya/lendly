@@ -66,7 +66,7 @@ new #[Layout('layouts.guest')] class extends Component
         @if (auth()->user()->isAdmin())
             {{ __('Verify your email using the link we emailed you to access your admin account. If you did not receive the email, you can request another below.') }}
         @else
-            {{ __('Your account is created. Confirm your email using the link we sent, then submit your National ID and selfie for administrator review. If the message has not arrived, check your spam folder or request another verification email below.') }}
+            {{ __('Your account is created. Confirm your email using the link we sent, then submit a photo ID and selfie for administrator review. If the message has not arrived, check your spam folder or request another verification email below.') }}
         @endif
     </div>
 

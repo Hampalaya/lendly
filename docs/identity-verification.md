@@ -4,14 +4,13 @@ Lendly uses administrator review at `/identity/verify`. Google or email signup c
 
 ## Member and administrator workflow
 
-1. The member confirms their account name matches their Philippine National ID, accepts processing consent and uploads the ID front, optional back containing the QR, and a clear selfie. JPEG, PNG or WebP, 200–6,000 pixels per side, at most 8 MB each.
-2. Lendly runs YuNet face detection and SFace comparison locally. The main ID portrait is aligned and compared with the single selfie face. Missing, too-small or multiple selfie faces stop submission with an actionable error. Runtime failures cannot approve or create a partial submission.
-3. An active, email-confirmed administrator opens **ID reviews** at `/admin/identity-submissions`. They inspect the photos and raw cosine score, use [the official National ID Check](https://everify.gov.ph/check), and compare the checker's demographics with the submitted ID and current account name.
-4. Approval requires three explicit confirmations: official QR passed, details match, and visual face/score review. Rejection requires a reason displayed to the member; they can upload new photos. The decision and reviewer are recorded. Members approved this way display **ID reviewed**.
+1. The member accepts processing consent, selects their ID type, and uploads a photo ID with their name and portrait, an optional back image, and a selfie. Include the side with the QR code for a Philippine National ID. JPEG, PNG or WebP, 200–6,000 pixels per side, at most 8 MB each.
+2. Lendly compares the ID portrait with the selfie locally using YuNet and SFace. It also runs Tesseract on the ID front to read the printed name. When text reading fails, the submission continues to administrator review.
+3. An active, email-confirmed administrator opens **ID reviews** at `/admin/identity-submissions`. They confirm the ID type, compare the printed name with the account name, and inspect the photos, face similarity score, and name read by Tesseract.
+4. For a Philippine National ID, the administrator scans the QR code and compares the result with the ID using [the official National ID Check](https://everify.gov.ph/check). For school, work, and other photo IDs, they use the issuer's official lookup or contact the issuer through its published contact details. If they cannot confirm the ID, they ask the member to submit a different one.
+5. The administrator records the document check and confirms the name and face review before approving. Rejection requires a reason displayed to the member. Members approved this way display **ID reviewed**.
 
-The administrator must manually transfer/upload the QR image to the official checker. Opening that site does not send a verification result back to Lendly. The review form records the administrator's attestation; it does not call a government API.
-
-A raw cosine score is not a probability, confidence percentage or automatic verdict. Higher means more similar. No uncalibrated threshold decides access. A selfie photo (including a camera capture) does not establish liveness or prevent replay/deepfake attacks. Reviewers must assess the photos and official QR result together; unclear submissions should be rejected with instructions to retry.
+A raw cosine score measures face similarity. The administrator should read the name directly from the photo when the OCR suggestion is missing or inaccurate. Lendly records the completed check that the administrator attests to.
 
 ## Railway runtime
 
@@ -24,13 +23,14 @@ FACE_MATCH_PYTHON=/opt/lendly-face/runtime/bin/python
 FACE_MATCH_MODELS=/opt/lendly-face/models
 ```
 
-Check for older service-variable overrides pointing at missing paths. Use Railpack for the application service and keep its generated build/start behavior; no changes to email variables or the database are required. Deploy this revision to the actual Railway-connected repository/branch, then run this inside the **new application container**:
+Use Railpack for the application service. It also installs Tesseract and English OCR data at runtime. Apply the database migrations for the encrypted name field, ID type and verification method when deploying this revision. On the **new application container**, run:
 
 ```sh
 php artisan identity:check-runtime
+tesseract --list-langs
 ```
 
-It must report healthy. This checks actual Python execution, model checksums, loading and inference with a generated blank image; it does not upload an ID, approve a member, or establish recognition accuracy. Then test submission with authorized non-sensitive fixture photos and confirm the pending submission can be reviewed. Passing local mocks is not proof of a working hosted runtime. Failed comparisons continue to block submission; this change does not bypass review or invent a score.
+The face runtime should report healthy, and the Tesseract language list should include `eng`. Then submit authorized test photos and confirm that the admin queue displays the face score and the extracted name.
 
 ## Local setup
 
@@ -49,6 +49,8 @@ npm run build
 
 On Linux use `face-runtime/bin/python` in place of `face-runtime/Scripts/python.exe`. These private runtime/model directories are ignored by Git. The default Laravel config uses this project's private virtual environment. Set `FACE_MATCH_PYTHON` only when using a different absolute Python executable path. Install the same runtime and weights on each application server. Enable PHP process execution for the app user; comparison has a 45-second timeout. Missing setup produces an honest submission error.
 
+Install Tesseract with English language data to try name extraction locally. Put it on PATH or set `ID_OCR_BINARY` to its executable path. The app can accept a submission for manual review while Tesseract is unavailable.
+
 Weights come from [OpenCV Zoo YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) (MIT) and [OpenCV Zoo SFace](https://github.com/opencv/opencv_zoo/tree/main/models/face_recognition_sface) (Apache 2.0). The setup script checks the published Git LFS SHA-256 IDs before accepting either model and saves their license texts alongside them. See [OpenCV's comparison documentation](https://docs.opencv.org/4.x/d0/dd4/tutorial_dnn_face.html) for algorithm details. Benchmark thresholds are not calibrated for photographs of Philippine IDs.
 
 Run the Laravel scheduler (`php artisan schedule:work` for local development, normal per-minute `schedule:run` cron in deployment). `identity:prune-documents` runs hourly and can be invoked manually. It cancels submissions older than 30 days and retries deletion of photos from decided/cancelled reviews. At the 30-day boundary photos immediately become inaccessible to the document endpoint; physical deletion runs on the next scheduler pass. Backups need their own expiry policy.
@@ -57,7 +59,7 @@ Run the Laravel scheduler (`php artisan schedule:work` for local development, no
 
 Files use generated names under `storage/app/private/identity-documents`. They are never put on the public disk or included in model serialization. A protected, non-cached document endpoint rechecks the current viewer and serves only unexpired pending images to the submitting member or an active, email-confirmed administrator. Keep the private storage outside the web server's document root and disable request-body logging for uploads/Livewire requests.
 
-Photos are deleted after a decision, cancellation, account name/email change, suspension or closure. Temporary upload files are removed on successful submission; abandoned Livewire uploads follow Livewire's normal temporary-file cleanup. Failed or interrupted deletions are retried by the pruning command. Minimal decision metadata remains: member/reviewer IDs, dates, consent date, notes, keyed profile fingerprint and raw similarity. Embeddings, decoded QR data and government demographic responses are not stored by this workflow. Do not paste ID numbers or sensitive demographics into review notes.
+Photos and the encrypted OCR name are cleared after a decision, cancellation, account name/email change, suspension, or closure. Lendly processes OCR on its own server and keeps only the name during review. Temporary upload files are removed on successful submission; abandoned Livewire uploads follow Livewire's normal temporary-file cleanup. The pruning command retries failed file deletions. The review record retains member and reviewer IDs, dates, consent date, notes, the keyed profile fingerprint, the raw similarity score, the ID type and the verification method. Earlier reviews keep their existing decisions and have no recorded verification method. Keep ID numbers and other sensitive details out of review notes.
 
 User identity references are encrypted and hidden from serialization. Changing name/email, suspension or deletion clears approval and cancels pending submissions. Fresh account fingerprints and locked server transactions prevent stale profiles or concurrent decisions from granting approval. Both member interfaces share the same approval.
 

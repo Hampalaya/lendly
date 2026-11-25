@@ -29,7 +29,7 @@ class IdentityVerificationFlowTest extends TestCase
         foreach (['owner', 'renter'] as $interface) {
             $this->actingAs($member)->withSession(['active_interface' => $interface])->get('/identity/verify')
                 ->assertOk()->assertSee('Submit your ID for review.')
-                ->assertSee('Privacy and consent')->assertSee('National ID front')
+                ->assertSee('Privacy and consent')->assertSee('Photo ID front')
                 ->assertDontSee('Identity verified');
         }
 

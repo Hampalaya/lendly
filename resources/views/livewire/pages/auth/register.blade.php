@@ -76,7 +76,7 @@ new #[Layout('layouts.guest')] class extends Component
         </span>
         <h1 class="mt-4 text-3xl font-extrabold tracking-[-0.04em] text-[#071a3d] sm:text-4xl">Create your free account.</h1>
         <p class="mt-3 text-sm leading-6 text-slate-500">One account lets you rent what you need and earn from the useful things you already own.</p>
-        <p class="mt-2 text-sm leading-6 text-slate-500">A National ID and selfie review is required before you can rent or list items.</p>
+        <p class="mt-2 text-sm leading-6 text-slate-500">A photo ID and selfie review is required before you can rent or list items.</p>
     </div>
 
     <x-google-sign-in :href="route('auth.google.redirect', ['prompt' => 'consent'])" />
@@ -91,7 +91,7 @@ new #[Layout('layouts.guest')] class extends Component
                     </span>
                     <input wire:model="name" id="name" type="text" name="name" required autofocus autocomplete="name" aria-describedby="registration-name-help" placeholder="Juan Dela Cruz" class="block w-full rounded-2xl border-slate-200 bg-slate-50/80 py-3.5 pl-12 pr-4 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100" />
                 </div>
-                <p id="registration-name-help" class="mt-2 text-xs leading-5 text-slate-500">Use your full name as it appears on your National ID, including your middle name and suffix if any.</p>
+                <p id="registration-name-help" class="mt-2 text-xs leading-5 text-slate-500">Use your full name as it appears on the photo ID you plan to submit.</p>
                 <x-input-error :messages="$errors->get('name')" class="mt-2" />
             </div>
 

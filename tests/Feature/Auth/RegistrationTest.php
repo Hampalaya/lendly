@@ -77,7 +77,7 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->get($verificationUrl)->assertRedirect(route('identity.verify', absolute: false));
-        $this->get(route('identity.verify'))->assertOk()->assertSee('National ID front')
+        $this->get(route('identity.verify'))->assertOk()->assertSee('Photo ID front')
             ->assertSee('Privacy and consent')->assertSee('type="file"', false);
 
         $this->assertTrue($member->fresh()->hasVerifiedEmail());

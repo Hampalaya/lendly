@@ -15,6 +15,8 @@ class Verify extends Component
 {
     use WithFileUploads;
 
+    public string $documentType = '';
+
     public $front;
 
     public $back;
@@ -38,11 +40,11 @@ class Verify extends Component
             'consent' => ['accepted'],
         ], ['consent.accepted' => 'Please consent to the private ID review and face comparison before submitting.']);
 
-        app(ManualIdentityReview::class)->submit($member, $this->front, $this->back, $this->selfie, $this->consent);
+        app(ManualIdentityReview::class)->submit($member, $this->front, $this->back, $this->selfie, $this->consent, $this->documentType);
         foreach ([$this->front, $this->back, $this->selfie] as $upload) {
             $upload?->delete();
         }
-        $this->reset('front', 'back', 'selfie', 'consent');
+        $this->reset('front', 'back', 'selfie', 'consent', 'documentType');
         $this->dispatch('identity-submitted');
     }
 
@@ -60,6 +62,7 @@ class Verify extends Component
 
         return view('livewire.identity.verify', [
             'member' => $member,
+            'documentTypes' => IdentitySubmission::DOCUMENT_TYPES,
             'verified' => $member->hasVerifiedIdentity(),
             'submission' => IdentitySubmission::where('user_id', $member->id)->latest('id')->first(),
         ]);
