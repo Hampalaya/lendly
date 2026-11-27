@@ -55,13 +55,13 @@ class ManualIdentityUiTest extends TestCase
 
     public function test_admin_queue_requires_all_checks_then_member_sees_reviewed_badge(): void
     {
-        Process::fake(fn () => Process::result(output: "School ID\nName: Maria Elena Santos"));
+        Process::fake(fn () => Process::result(output: "School ID\nName: MARIA  ELENA SANTOS"));
         $member = User::factory()->create(['name' => 'Maria Elena Santos']);
         $submission = $this->submit($member);
         $admin = User::factory()->admin()->create();
         $this->actingAs($admin)->get(route('admin.identity-submissions.index'))->assertOk()->assertSee($member->name);
         Livewire::actingAs($admin)->test(AdminReviews::class)->call('selectSubmission', $submission->id)
-            ->assertSee('0.6300')->assertSee('Name read from ID')->assertDontSee('https://everify.gov.ph/check', false)
+            ->assertSee('0.6300')->assertSee('Names match')->assertDontSee('https://everify.gov.ph/check', false)
             ->assertSee('How did you confirm this ID?')->assertSee('Direct confirmation from the issuer')
             ->call('review', 'approved')->assertHasErrors(['document_checked', 'details_match', 'face_reviewed'])
             ->set('documentChecked', true)->set('detailsMatch', true)->set('faceReviewed', true)
@@ -69,11 +69,22 @@ class ManualIdentityUiTest extends TestCase
             ->set('issuerCheck', 'issuer_confirmation')
             ->call('review', 'approved')->assertHasNoErrors()->assertSee('Review photos are no longer available')
             ->assertSee('Document check: Direct confirmation from the issuer')
-            ->assertDontSee('Name read from ID');
+            ->assertDontSee('Name read from ID')->assertDontSee('Names match');
         $this->assertTrue($member->fresh()->hasVerifiedIdentity());
         $this->actingAs($member)->get(route('identity.verify'))->assertOk()->assertSee('ID reviewed')
             ->assertDontSee('Submit for review');
         $this->get(route('users.show', $member))->assertSee('ID reviewed')->assertDontSee('manual-review:');
+    }
+
+    public function test_admin_queue_flags_a_different_extracted_name_for_manual_review(): void
+    {
+        Process::fake(fn () => Process::result(output: "School ID\nName: Maria Santos"));
+        $submission = $this->submit(User::factory()->create(['name' => 'Maria Elena Santos']));
+
+        Livewire::actingAs(User::factory()->admin()->create())->test(AdminReviews::class)
+            ->call('selectSubmission', $submission->id)
+            ->assertSee('Name read from ID')->assertSee('Maria Santos')->assertSee('Names differ');
+        $this->assertSame('pending', $submission->fresh()->status);
     }
 
     public function test_rejected_member_sees_reason_and_can_submit_again(): void
@@ -82,7 +93,8 @@ class ManualIdentityUiTest extends TestCase
         $submission = $this->submit($member, 'national_id');
         Livewire::actingAs(User::factory()->admin()->create())->test(AdminReviews::class)
             ->call('selectSubmission', $submission->id)->assertSee('https://everify.gov.ph/check', false)
-            ->assertDontSee('How did you confirm this ID?')->set('notes', 'Please upload a readable QR code.')
+            ->assertSee('Name unreadable')->assertDontSee('How did you confirm this ID?')
+            ->set('notes', 'Please upload a readable QR code.')
             ->call('review', 'rejected')->assertHasNoErrors();
         $this->actingAs($member)->get(route('identity.verify'))->assertSee('Please upload a readable QR code.');
         $next = $this->submit($member);

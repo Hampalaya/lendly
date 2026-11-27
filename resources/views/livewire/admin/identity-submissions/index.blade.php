@@ -1,3 +1,5 @@
+@use('Illuminate\Support\Str')
+
 <div>
     <x-page-header eyebrow="Administration" title="ID reviews" subtitle="Review photo IDs and selfies before enabling renting and listing." />
     <div class="px-4 pt-3 sm:px-6 lg:px-8">
@@ -52,7 +54,17 @@
                         </div>
 
                         @if ($selected->status === 'pending' && $selected->created_at->gt(now()->subDays(30)))
-                            @php($nationalId = $selected->document_type === \App\Models\IdentitySubmission::NATIONAL_ID)
+                            @php
+                                $nationalId = $selected->document_type === \App\Models\IdentitySubmission::NATIONAL_ID;
+                                $extractedName = $selected->extracted_name;
+                                $accountName = $selected->user?->name;
+                                $nameComparison = match (true) {
+                                    blank($extractedName) => ['Name unreadable', 'slate'],
+                                    blank($accountName) => null,
+                                    Str::squish(Str::lower($extractedName)) === Str::squish(Str::lower($accountName)) => ['Names match', 'green'],
+                                    default => ['Names differ', 'amber'],
+                                };
+                            @endphp
                             <dl class="grid gap-3 rounded-xl border border-slate-200 p-4 text-sm sm:grid-cols-2">
                                 <div class="sm:col-span-2">
                                     <dt class="font-semibold text-slate-900">ID type selected by member</dt>
@@ -60,12 +72,18 @@
                                 </div>
                                 <div>
                                     <dt class="font-semibold text-slate-900">Account name</dt>
-                                    <dd class="mt-1 break-words text-slate-700">{{ $selected->user?->name ?? 'Unavailable account' }}</dd>
+                                    <dd class="mt-1 break-words text-slate-700">{{ $accountName ?? 'Unavailable account' }}</dd>
                                 </div>
                                 <div>
                                     <dt class="font-semibold text-slate-900">Name read from ID</dt>
-                                    <dd class="mt-1 break-words text-slate-700">{{ $selected->extracted_name ?? 'Could not read a name automatically' }}</dd>
+                                    <dd class="mt-1 break-words text-slate-700">{{ $extractedName ?? 'Could not read a name automatically' }}</dd>
                                 </div>
+                                @if ($nameComparison)
+                                    <div class="sm:col-span-2">
+                                        <dt class="font-semibold text-slate-900">Automatic name comparison</dt>
+                                        <dd class="mt-1"><x-badge :color="$nameComparison[1]">{{ $nameComparison[0] }}</x-badge></dd>
+                                    </div>
+                                @endif
                             </dl>
                             <div class="grid gap-4 sm:grid-cols-2">
                                 @foreach (['front' => 'Photo ID front', 'selfie' => 'Selfie', 'back' => 'Photo ID back'] as $kind => $label)
@@ -87,7 +105,7 @@
                                 @else
                                     <p>Use the issuer’s official lookup or contact the issuer through its published contact details. If you cannot confirm the ID, ask the member to submit a different one.</p>
                                 @endif
-                                <p class="mt-2">Confirm that the uploaded ID matches the type selected by the member. If the type is wrong, ask the member to resubmit. Compare the name read automatically with the printed name.</p>
+                                <p class="mt-2">Confirm that the uploaded ID matches the type selected by the member. If the type is wrong, ask the member to resubmit. Confirm the printed name yourself before approving.</p>
                             </div>
 
                             <form wire:submit="review('approved')" class="space-y-5 border-t border-slate-100 pt-5">
